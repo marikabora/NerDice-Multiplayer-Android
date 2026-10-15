@@ -110,6 +110,8 @@
 
   <!-- Elemento Audio HTML5 nativo con link raw al file MP3 su GitHub -->
   <audio id="bgThemeAudio" loop preload="auto" src="https://raw.githubusercontent.com/marikabora/NerDice-Multiplayer-Android/main/Flagons_Raised_at_Midnight.mp3"></audio>
+  <!-- Musica specifica per il tavolo Taverna: Round of Mead and Iron Dice -->
+  <audio id="tavernThemeAudio" loop preload="auto" src="https://raw.githubusercontent.com/marikabora/NerDice-Multiplayer-Android/main/Round_of_Mead_and_Iron_Dice.mp3"></audio>
 
   <header class="w-full max-w-5xl mx-auto flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-800/80 mb-3 sm:mb-5">
     <div class="flex items-center space-x-3">
@@ -124,17 +126,12 @@
     </div>
   </div>
 
-  <!-- Controlli Audio in evidenza -->
+  <!-- Controlli Audio in evidenza: solo musica (il suono del lancio è permanente) -->
   <div class="flex items-center flex-wrap gap-2">
-    <!-- Pulsante Musica Iniziale -->
-    <button id="musicBtn" onclick="toggleThemeMusic()" class="px-3 py-1.5 rounded-xl bg-slate-800/90 border border-slate-700 hover:bg-slate-700 text-slate-300 text-xs flex items-center gap-2 transition" title="Attiva/Disattiva Musica Iniziale">
+    <!-- Pulsante Musica ON/OFF -->
+    <button id="musicBtn" onclick="toggleThemeMusic()" class="px-3 py-1.5 rounded-xl bg-slate-800/90 border border-slate-700 hover:bg-slate-700 text-slate-300 text-xs flex items-center gap-2 transition" title="Attiva/Disattiva Musica di Sottofondo">
       <i id="musicIcon" class="fa-solid fa-music text-indigo-400"></i>
       <span id="musicBtnText">Musica ON</span>
-    </button>
-    <!-- Pulsante Suono Lancio Dadi -->
-    <button id="soundBtn" onclick="toggleAudio()" class="px-3 py-1.5 rounded-xl bg-slate-800/90 border border-slate-700 hover:bg-slate-700 text-slate-300 text-xs flex items-center gap-2 transition" title="Attiva/Disattiva Suono Lancio">
-      <i id="soundIcon" class="fa-solid fa-volume-high text-amber-400"></i>
-      <span id="soundBtnText">Suono Lancio ON</span>
     </button>
   </div>
 </header>
@@ -398,7 +395,7 @@
     ];
 
     const appState = {
-      sound: true,
+      sound: true, // Sempre attivo, non disattivabile
       music: true,
       activeTable: 'tavern',
       currentSkin: 'bronze',
@@ -579,26 +576,45 @@
       return audioCtx;
     }
 
-    /* ---- GESTIONE BRANO MUSICALE INTEGRO (Flagons Raised at Midnight) ---- */
+    /* ---- GESTIONE BRANO MUSICALE INTEGRO E TRACCE DEI TAVOLI ---- */
     let bgAudioEl = null;
+    let tavernAudioEl = null;
 
     function initThemeMusicPlayer() {
       bgAudioEl = document.getElementById('bgThemeAudio');
-      if (!bgAudioEl) return;
-      bgAudioEl.volume = 0.15; // Volume abbassato per sottofondo leggero e non invasivo
+      tavernAudioEl = document.getElementById('tavernThemeAudio');
+
+      if (bgAudioEl) bgAudioEl.volume = 0.15; // Volume leggero per l'intro
+      if (tavernAudioEl) tavernAudioEl.volume = 0.18; // Volume per il tema Taverna
     }
 
     function startThemeMusic() {
       if (!appState.music || !bgAudioEl) return;
+      // Assicura che nessun'altra traccia sia in esecuzione
+      stopTavernMusic();
       bgAudioEl.play().catch(e => {
-        // I browser bloccano l'audio automatico se l'utente non ha ancora cliccato/toccato
-        console.log('Autoplay in attesa di interazione:', e);
+        console.log('Autoplay intro in attesa di interazione:', e);
       });
     }
 
     function stopThemeMusic() {
       if (bgAudioEl) {
         bgAudioEl.pause();
+      }
+    }
+
+    function startTavernMusic() {
+      if (!appState.music || !tavernAudioEl) return;
+      // Stoppa la musica iniziale
+      stopThemeMusic();
+      tavernAudioEl.play().catch(e => {
+        console.log('Autoplay taverna in attesa di interazione:', e);
+      });
+    }
+
+    function stopTavernMusic() {
+      if (tavernAudioEl) {
+        tavernAudioEl.pause();
       }
     }
 
@@ -610,24 +626,19 @@
       if (appState.music) {
         if (icon) icon.className = 'fa-solid fa-music text-indigo-400';
         if (text) text.textContent = 'Musica ON';
-        startThemeMusic();
+
+        // Ripristina la musica appropriata alla schermata attuale
+        const isArenaVisible = !document.getElementById('arenaPanel').classList.contains('hidden');
+        if (isArenaVisible && appState.activeTable === 'tavern') {
+          startTavernMusic();
+        } else if (!isArenaVisible) {
+          startThemeMusic();
+        }
       } else {
         if (icon) icon.className = 'fa-solid fa-music-slash text-slate-500';
         if (text) text.textContent = 'Musica OFF';
         stopThemeMusic();
-      }
-    }
-
-    function toggleAudio() {
-      appState.sound = !appState.sound;
-      const icon = document.getElementById('soundIcon');
-      const text = document.getElementById('soundBtnText');
-      if (appState.sound) {
-        icon.className = 'fa-solid fa-volume-high text-amber-400';
-        if (text) text.textContent = 'Suono Lancio ON';
-      } else {
-        icon.className = 'fa-solid fa-volume-xmark text-slate-500';
-        if (text) text.textContent = 'Suono Lancio OFF';
+        stopTavernMusic();
       }
     }
 
@@ -645,15 +656,14 @@
       return cachedNoiseBuffer;
     }
 
-    /* SUONO SINCRONIZZATO: Colpo singolo di faccia o spigolo di resina ad ogni impatto visivo 3D */
+    /* SUONO SINCRONIZZATO: Colpo singolo di faccia o spigolo di resina ad ogni impatto visivo 3D (Sempre attivo) */
     function playSynchronizedResinHit(intensity = 1.0, pitchMod = 1.0) {
-      if (!appState.sound) return;
       try {
         const ctx = getAudioContext();
         const t = ctx.currentTime;
         const clampedInt = Math.max(0.05, Math.min(1.0, intensity));
 
-        // 1. Schiocco d'urto transiente (filtro passa-banda centrato sulle risonanze tipiche del polimero sintetico)
+        // 1. Schiocco d'urto transiente
         const noiseSrc = ctx.createBufferSource();
         noiseSrc.buffer = getNoiseBuffer(ctx);
 
@@ -671,7 +681,7 @@
         noiseGain.connect(ctx.destination);
         noiseSrc.start(t);
 
-        // 2. Tono di corpo sordo della resina piena (~860 Hz con armonica a rapido decadimento)
+        // 2. Tono di corpo sordo della resina piena
         const bodyOsc = ctx.createOscillator();
         const bodyGain = ctx.createGain();
         bodyOsc.type = 'triangle';
@@ -687,7 +697,7 @@
         bodyOsc.start(t);
         bodyOsc.stop(t + 0.042);
 
-        // 3. Rimbombo sordo del vassoio da gioco (bassi smorzati sul fondo di legno/feltro)
+        // 3. Rimbombo sordo del vassoio da gioco
         const thudOsc = ctx.createOscillator();
         const thudGain = ctx.createGain();
         thudOsc.type = 'sine';
@@ -706,9 +716,8 @@
       }
     }
 
-    /* SUONO SINCRONIZZATO: Micro-clack di collisione resina-contro-resina in tempo reale */
+    /* SUONO SINCRONIZZATO: Micro-clack di collisione resina-contro-resina in tempo reale (Sempre attivo) */
     function playSynchronizedDieClack() {
-      if (!appState.sound) return;
       try {
         const ctx = getAudioContext();
         const t = ctx.currentTime;
@@ -730,9 +739,8 @@
       }
     }
 
-    /* Sintesi fisica acustica per lanci cumulativi di fallback */
+    /* Sintesi fisica acustica per lanci cumulativi di fallback (Sempre attivo) */
     function playImpactAudio(isMax) {
-      if (!appState.sound) return;
       playSynchronizedResinHit(isMax ? 1.0 : 0.85, 1.0);
     }
 
@@ -1174,6 +1182,7 @@
 
       const rimLight = new THREE.PointLight(0x818cf8, 0.9, 30);
       rimLight.position.set(-10, 8, -8);
+      rimLight.name = 'sceneRimLight';
       scene.add(rimLight);
 
       buildTableTray(appState.activeTable);
@@ -1183,6 +1192,363 @@
       animateLoop();
     }
 
+    /* =========================================================================
+       GENERATORI PROCEDURALI DI TEXTURE PER I 5 SCENARI (CANVAS 2D -> THREE.JS)
+       ========================================================================= */
+
+    /* 1. TAVERNA: Assi di quercia con venature fluide, nodi scuri e chiodi di ferro */
+    function createTavernFloorTexture() {
+      const cv = document.createElement('canvas');
+      cv.width = 1024;
+      cv.height = 1024;
+      const ctx = cv.getContext('2d');
+
+      // Tonalità di base del legno scuro stagionato
+      ctx.fillStyle = '#2b180d';
+      ctx.fillRect(0, 0, 1024, 1024);
+
+      const plankCount = 7;
+      const plankH = 1024 / plankCount;
+
+      for (let p = 0; p < plankCount; p++) {
+        const yTop = p * plankH;
+
+        // Variazione di tonalità tra le diverse assi
+        const toneShift = (Math.sin(p * 3.7) * 12);
+        ctx.fillStyle = `rgb(${46 + toneShift}, ${26 + (toneShift * 0.5)}, ${14 + (toneShift * 0.2)})`;
+        ctx.fillRect(0, yTop, 1024, plankH);
+
+        // Venature organiche del legno lungo l'asse
+        ctx.lineWidth = 1.5;
+        for (let j = 0; j < 55; j++) {
+          const yLocal = yTop + Math.random() * plankH;
+          const alpha = 0.04 + Math.random() * 0.12;
+          ctx.strokeStyle = Math.random() > 0.4 ? `rgba(18, 9, 4, ${alpha})` : `rgba(120, 75, 40, ${alpha * 0.8})`;
+
+          ctx.beginPath();
+          ctx.moveTo(0, yLocal);
+          ctx.bezierCurveTo(
+            260, yLocal + (Math.random() - 0.5) * 20,
+            680, yLocal + (Math.random() - 0.5) * 20,
+            1024, yLocal + (Math.random() - 0.5) * 8
+          );
+          ctx.stroke();
+        }
+
+        // Nodo del legno su assi selezionate
+        if (p % 2 === 1) {
+          const kx = 220 + (p * 110) % 580;
+          const ky = yTop + plankH * 0.5;
+          ctx.fillStyle = 'rgba(15, 7, 3, 0.45)';
+          ctx.beginPath();
+          ctx.ellipse(kx, ky, 24, 14, Math.PI / 12, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.strokeStyle = 'rgba(70, 40, 20, 0.35)';
+          for (let r = 20; r <= 55; r += 9) {
+            ctx.beginPath();
+            ctx.ellipse(kx, ky, r, r * 0.65, Math.PI / 12, 0, Math.PI * 2);
+            ctx.stroke();
+          }
+        }
+
+        // Chiodi di ferro battuto alle due estremità dell'asse
+        [35, 989].forEach(nx => {
+          const ny = yTop + plankH * 0.5;
+          // Ombra
+          ctx.fillStyle = 'rgba(0,0,0,0.6)';
+          ctx.beginPath();
+          ctx.arc(nx + 2, ny + 2, 7, 0, Math.PI * 2);
+          ctx.fill();
+          // Testa chiodo
+          ctx.fillStyle = '#1c1b18';
+          ctx.beginPath();
+          ctx.arc(nx, ny, 6, 0, Math.PI * 2);
+          ctx.fill();
+          // Riflesso
+          ctx.fillStyle = 'rgba(255,255,255,0.35)';
+          ctx.beginPath();
+          ctx.arc(nx - 2, ny - 2, 2, 0, Math.PI * 2);
+          ctx.fill();
+        });
+
+        // Fuga / solco profondo di separazione tra le assi
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
+        ctx.fillRect(0, yTop + plankH - 3, 1024, 3);
+        ctx.fillStyle = 'rgba(160, 110, 65, 0.18)';
+        ctx.fillRect(0, yTop + 1, 1024, 1.5);
+      }
+
+      const tex = new THREE.CanvasTexture(cv);
+      tex.wrapS = THREE.ClampToEdgeWrapping;
+      tex.wrapT = THREE.ClampToEdgeWrapping;
+      return tex;
+    }
+
+    /* 2. CRIPTA: Lastricato di pietra ardesia sotterranea con fughe scure e crepe */
+    function createCryptFloorTexture() {
+      const cv = document.createElement('canvas');
+      cv.width = 1024;
+      cv.height = 1024;
+      const ctx = cv.getContext('2d');
+
+      // Base pietra grigio fumo freddo
+      ctx.fillStyle = '#151921';
+      ctx.fillRect(0, 0, 1024, 1024);
+
+      const rows = 6;
+      const cols = 6;
+      const tw = 1024 / cols;
+      const th = 1024 / rows;
+
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const shift = (r % 2 === 0) ? 0 : tw * 0.5;
+          const x = (c * tw + shift) % 1024;
+          const y = r * th;
+
+          // Variazione colore piastrella di ardesia
+          const randLum = Math.floor((Math.sin(r * 4.3 + c * 2.1) + 1) * 8);
+          ctx.fillStyle = `rgb(${26 + randLum}, ${30 + randLum}, ${38 + randLum})`;
+          ctx.fillRect(x + 2, y + 2, tw - 4, th - 4);
+
+          // Micro-puntinatura e texture rugosa della pietra
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.035)';
+          for (let p = 0; p < 80; p++) {
+            const px = x + 4 + Math.random() * (tw - 8);
+            const py = y + 4 + Math.random() * (th - 8);
+            ctx.fillRect(px, py, 2, 2);
+          }
+
+          // Crepe casuali sulla pietra antica
+          if ((r + c) % 3 === 0) {
+            ctx.strokeStyle = 'rgba(8, 10, 14, 0.8)';
+            ctx.lineWidth = 1.6;
+            ctx.beginPath();
+            let cx = x + tw * 0.3;
+            let cy = y + th * 0.2;
+            ctx.moveTo(cx, cy);
+            for (let s = 0; s < 4; s++) {
+              cx += (Math.random() - 0.5) * 35;
+              cy += 15 + Math.random() * 20;
+              ctx.lineTo(cx, cy);
+            }
+            ctx.stroke();
+          }
+
+          // Bordi smussati e malta scura
+          ctx.strokeStyle = 'rgba(5, 7, 10, 0.9)';
+          ctx.lineWidth = 4;
+          ctx.strokeRect(x + 2, y + 2, tw - 4, th - 4);
+        }
+      }
+
+      const tex = new THREE.CanvasTexture(cv);
+      return tex;
+    }
+
+    /* 3. ALTARE: Ossidiana a specchio con cerchio rituale arcano a 8 punte e rune */
+    function createAltarFloorTexture() {
+      const cv = document.createElement('canvas');
+      cv.width = 1024;
+      cv.height = 1024;
+      const ctx = cv.getContext('2d');
+
+      // Ossidiana nera profonda a riflessione
+      const bgGrad = ctx.createRadialGradient(512, 512, 50, 512, 512, 600);
+      bgGrad.addColorStop(0, '#130922');
+      bgGrad.addColorStop(0.65, '#0c0517');
+      bgGrad.addColorStop(1, '#05020a');
+      ctx.fillStyle = bgGrad;
+      ctx.fillRect(0, 0, 1024, 1024);
+
+      const cx = 512;
+      const cy = 512;
+
+      // Bagliore etereo diffuso centrale
+      ctx.shadowColor = '#a855f7';
+      ctx.shadowBlur = 35;
+
+      // Anelli rituali concentrici
+      ctx.strokeStyle = '#c084fc';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.arc(cx, cy, 380, 0, Math.PI * 2);
+      ctx.stroke();
+
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(cx, cy, 350, 0, Math.PI * 2);
+      ctx.stroke();
+
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(cx, cy, 210, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Stella rituale a 8 punte (due quadrati ruotati)
+      ctx.shadowBlur = 20;
+      ctx.strokeStyle = 'rgba(216, 180, 254, 0.85)';
+      ctx.lineWidth = 3;
+      for (let rot = 0; rot < 2; rot++) {
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate((Math.PI / 4) * rot);
+        ctx.strokeRect(-210, -210, 420, 420);
+        ctx.restore();
+      }
+
+      // Sigilli e rune arcani disposti lungo la circonferenza
+      ctx.shadowBlur = 15;
+      ctx.fillStyle = '#f3e8ff';
+      ctx.font = 'bold 22px serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      const runes = ['ᚦ', 'ᚱ', 'ᚲ', 'ᚷ', 'ᚹ', 'ᚺ', 'ᛃ', 'ᛈ', 'ᛉ', 'ᛋ', 'ᛏ', 'ᛒ', 'ᛖ', 'ᛗ', 'ᛚ', 'ᛞ'];
+      for (let i = 0; i < 16; i++) {
+        const angle = (i * Math.PI * 2) / 16;
+        const rx = cx + Math.cos(angle) * 365;
+        const ry = cy + Math.sin(angle) * 365;
+        ctx.save();
+        ctx.translate(rx, ry);
+        ctx.rotate(angle + Math.PI / 2);
+        ctx.fillText(runes[i % runes.length], 0, 0);
+        ctx.restore();
+      }
+
+      // Cristallo runico al centro
+      ctx.beginPath();
+      ctx.arc(cx, cy, 35, 0, Math.PI * 2);
+      ctx.fillStyle = '#d8b4fe';
+      ctx.fill();
+
+      const tex = new THREE.CanvasTexture(cv);
+      return tex;
+    }
+
+    /* 4. FONDERIA: Lamiere d'acciaio spazzolato, piastre di rame rivettate e ingranaggio */
+    function createSteampunkFloorTexture() {
+      const cv = document.createElement('canvas');
+      cv.width = 1024;
+      cv.height = 1024;
+      const ctx = cv.getContext('2d');
+
+      // Superficie metallica bronzo/rame brunito
+      const metGrad = ctx.createLinearGradient(0, 0, 1024, 1024);
+      metGrad.addColorStop(0, '#4a2c16');
+      metGrad.addColorStop(0.5, '#6c3e1e');
+      metGrad.addColorStop(1, '#3b2210');
+      ctx.fillStyle = metGrad;
+      ctx.fillRect(0, 0, 1024, 1024);
+
+      // Micro-graffi e spazzolatura industriale
+      ctx.strokeStyle = 'rgba(255, 215, 160, 0.08)';
+      ctx.lineWidth = 1;
+      for (let i = 0; i < 1200; i++) {
+        const y = Math.random() * 1024;
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(1024, y + (Math.random() - 0.5) * 8);
+        ctx.stroke();
+      }
+
+      // 4 Quadranti / piastre rivettate
+      ctx.strokeStyle = 'rgba(18, 9, 3, 0.9)';
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      ctx.moveTo(512, 0); ctx.lineTo(512, 1024);
+      ctx.moveTo(0, 512); ctx.lineTo(1024, 512);
+      ctx.stroke();
+
+      // File di rivetti e bulloni lungo i bordi e assi
+      ctx.fillStyle = '#f59e0b';
+      for (let p = 30; p < 1000; p += 60) {
+        // Asse orizzontale
+        [p].forEach(rx => {
+          ctx.beginPath();
+          ctx.arc(rx, 512, 4.5, 0, Math.PI * 2);
+          ctx.fill();
+        });
+        // Asse verticale
+        [p].forEach(ry => {
+          ctx.beginPath();
+          ctx.arc(512, ry, 4.5, 0, Math.PI * 2);
+          ctx.fill();
+        });
+      }
+
+      // Grande schema ingranaggio cesellato al centro
+      const cx = 512;
+      const cy = 512;
+      ctx.strokeStyle = 'rgba(251, 191, 36, 0.4)';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.arc(cx, cy, 260, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Denti dell'ingranaggio
+      const teeth = 18;
+      for (let t = 0; t < teeth; t++) {
+        const a = (t * Math.PI * 2) / teeth;
+        const tx = cx + Math.cos(a) * 260;
+        const ty = cy + Math.sin(a) * 260;
+        ctx.save();
+        ctx.translate(tx, ty);
+        ctx.rotate(a);
+        ctx.fillStyle = 'rgba(245, 158, 11, 0.5)';
+        ctx.fillRect(-12, -18, 24, 36);
+        ctx.restore();
+      }
+
+      const tex = new THREE.CanvasTexture(cv);
+      return tex;
+    }
+
+    /* 5. FELTRO: Panno verde casinò ad alta densità con filettatura perimetrale in foglia d'oro */
+    function createFeltFloorTexture() {
+      const cv = document.createElement('canvas');
+      cv.width = 1024;
+      cv.height = 1024;
+      const ctx = cv.getContext('2d');
+
+      // Verde feltro torneo profondo
+      ctx.fillStyle = '#0a3d28';
+      ctx.fillRect(0, 0, 1024, 1024);
+
+      // Micro-tessitura fine del panno da gioco
+      for (let y = 0; y < 1024; y += 4) {
+        ctx.fillStyle = (y % 8 === 0) ? 'rgba(16, 75, 50, 0.35)' : 'rgba(5, 40, 25, 0.35)';
+        ctx.fillRect(0, y, 1024, 2);
+      }
+      for (let x = 0; x < 1024; x += 4) {
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.02)';
+        ctx.fillRect(x, 0, 2, 1024);
+      }
+
+      // Cornice interna dorata decorativa da torneo
+      ctx.strokeStyle = '#d4af37';
+      ctx.lineWidth = 6;
+      ctx.strokeRect(60, 60, 904, 904);
+
+      ctx.strokeStyle = 'rgba(212, 175, 55, 0.6)';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(74, 74, 876, 876);
+
+      // Angolari decorativi a diamante
+      [
+        [60, 60], [964, 60], [60, 964], [964, 964]
+      ].forEach(([dx, dy]) => {
+        ctx.fillStyle = '#d4af37';
+        ctx.beginPath();
+        ctx.arc(dx, dy, 10, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      const tex = new THREE.CanvasTexture(cv);
+      return tex;
+    }
+
+    /* COSTRUZIONE VASSOIO 3D CON MATERIALI, TEXTURE PROCEDURALI E ILLUMINAZIONE TEMATICA */
     function buildTableTray(tableName) {
       const oldTray = scene.getObjectByName('trayGroup');
       if (oldTray) scene.remove(oldTray);
@@ -1190,27 +1556,99 @@
       const tray = new THREE.Group();
       tray.name = 'trayGroup';
 
-      let floorColor = 0x1a2e22;
+      let floorTex = null;
+      let floorColor = 0xffffff;
       let rimColor = 0x3d2716;
+      let roughness = 0.55;
+      let metalness = 0.15;
+
+      // Colori ed intensità luci tematiche per ciascuno scenario
+      let mainLightColor = 0xfff8ee;
+      let mainLightIntensity = 1.35;
+      let ambientColor = 0xffffff;
+      let ambientIntensity = 0.75;
+      let rimLightColor = 0x818cf8;
+      let rimLightIntensity = 0.85;
 
       if (tableName === 'tavern') {
-        floorColor = 0x422610;
-        rimColor = 0x221307;
+        floorTex = createTavernFloorTexture();
+        rimColor = 0x241408;
+        roughness = 0.65;
+        metalness = 0.08;
+        mainLightColor = 0xffd188; // Luce ambrata calda da taverna/candele
+        mainLightIntensity = 1.45;
+        ambientColor = 0x5a341a;
+        ambientIntensity = 0.85;
+        rimLightColor = 0xf59e0b;
+        rimLightIntensity = 0.95;
       } else if (tableName === 'crypt') {
-        floorColor = 0x1e242c;
-        rimColor = 0x101317;
+        floorTex = createCryptFloorTexture();
+        rimColor = 0x11161d;
+        roughness = 0.85;
+        metalness = 0.15;
+        mainLightColor = 0xc7d2fe; // Luce fredda spettrale ardesia
+        mainLightIntensity = 1.25;
+        ambientColor = 0x1e293b;
+        ambientIntensity = 0.70;
+        rimLightColor = 0x38bdf8;
+        rimLightIntensity = 1.1;
       } else if (tableName === 'altar') {
-        floorColor = 0x261338;
-        rimColor = 0x13071d;
+        floorTex = createAltarFloorTexture();
+        rimColor = 0x160728;
+        roughness = 0.18; // Ossidiana altamente lucida e riflettente
+        metalness = 0.40;
+        mainLightColor = 0xe0e7ff;
+        mainLightIntensity = 1.20;
+        ambientColor = 0x3b0764;
+        ambientIntensity = 0.80;
+        rimLightColor = 0xc084fc; // Bagliore etereo ultravioletto
+        rimLightIntensity = 1.4;
       } else if (tableName === 'steampunk') {
-        floorColor = 0x332010;
-        rimColor = 0x180f08;
+        floorTex = createSteampunkFloorTexture();
+        rimColor = 0xb45309; // Bordo ottone caldo
+        roughness = 0.35;
+        metalness = 0.65; // Lamiere metalliche e rame
+        mainLightColor = 0xffedd5;
+        mainLightIntensity = 1.40;
+        ambientColor = 0x451a03;
+        ambientIntensity = 0.85;
+        rimLightColor = 0xf97316; // Fonderia / bagliore metallo caldo
+        rimLightIntensity = 1.25;
+      } else if (tableName === 'felt') {
+        floorTex = createFeltFloorTexture();
+        rimColor = 0x2b1308; // Mogano lucido da casinò
+        roughness = 0.88; // Feltro ultra opaco assorbente
+        metalness = 0.04;
+        mainLightColor = 0xffffff; // Luce chiara neutra da torneo
+        mainLightIntensity = 1.30;
+        ambientColor = 0x064e3b;
+        ambientIntensity = 0.75;
+        rimLightColor = 0x34d399;
+        rimLightIntensity = 0.70;
       }
 
+      // Aggiorna le luci della scena se già esistenti
+      const mainLight = scene.children.find(c => c.isDirectionalLight);
+      if (mainLight) {
+        mainLight.color.setHex(mainLightColor);
+        mainLight.intensity = mainLightIntensity;
+      }
+      const ambientLight = scene.children.find(c => c.isAmbientLight);
+      if (ambientLight) {
+        ambientLight.color.setHex(ambientColor);
+        ambientLight.intensity = ambientIntensity;
+      }
+      const rimLight = scene.getObjectByName('sceneRimLight');
+      if (rimLight) {
+        rimLight.color.setHex(rimLightColor);
+        rimLight.intensity = rimLightIntensity;
+      }
+
+      // Piano del tavolo con texture procedurale dedicata
       const floorMat = new THREE.MeshStandardMaterial({
-        color: floorColor,
-        roughness: 0.75,
-        metalness: 0.1,
+        map: floorTex,
+        roughness: roughness,
+        metalness: metalness,
         transparent: false,
         opacity: 1.0
       });
@@ -1219,10 +1657,11 @@
       floor.receiveShadow = true;
       tray.add(floor);
 
+      // Cornice del vassoio da gioco
       const rimMat = new THREE.MeshStandardMaterial({
         color: rimColor,
-        roughness: 0.45,
-        metalness: 0.2,
+        roughness: tableName === 'altar' ? 0.25 : (tableName === 'steampunk' ? 0.35 : 0.55),
+        metalness: tableName === 'steampunk' ? 0.75 : 0.20,
         transparent: false,
         opacity: 1.0
       });
@@ -1231,18 +1670,26 @@
 
       const topW = new THREE.Mesh(new THREE.BoxGeometry(20.9, wallH, wallT), rimMat);
       topW.position.set(0, wallH / 2, -7.6);
+      topW.receiveShadow = true;
+      topW.castShadow = true;
       tray.add(topW);
 
       const botW = new THREE.Mesh(new THREE.BoxGeometry(20.9, wallH, wallT), rimMat);
       botW.position.set(0, wallH / 2, 7.6);
+      botW.receiveShadow = true;
+      botW.castShadow = true;
       tray.add(botW);
 
       const leftW = new THREE.Mesh(new THREE.BoxGeometry(wallT, wallH, 15), rimMat);
       leftW.position.set(-10.2, wallH / 2, 0);
+      leftW.receiveShadow = true;
+      leftW.castShadow = true;
       tray.add(leftW);
 
       const rightW = new THREE.Mesh(new THREE.BoxGeometry(wallT, wallH, 15), rimMat);
       rightW.position.set(10.2, wallH / 2, 0);
+      rightW.receiveShadow = true;
+      rightW.castShadow = true;
       tray.add(rightW);
 
       scene.add(tray);
@@ -1542,6 +1989,14 @@
     function showConfigScreen() {
       document.getElementById('configPanel').classList.remove('hidden');
       document.getElementById('arenaPanel').classList.add('hidden');
+
+      // Quando si ritorna alla configurazione/menu iniziale:
+      // Si interrompe la musica del tavolo e si riattiva l'intro
+      stopTavernMusic();
+      if (appState.music) {
+        startThemeMusic();
+      }
+
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
@@ -1549,6 +2004,15 @@
       document.getElementById('configPanel').classList.add('hidden');
       const arena = document.getElementById('arenaPanel');
       arena.classList.remove('hidden');
+
+      // Se il tavolo scelto è Taverna, ferma l'intro e attiva la musica Taverna
+      if (appState.activeTable === 'tavern') {
+        startTavernMusic();
+      } else {
+        // Sugli altri tavoli ferma sia l'intro che la musica taverna
+        stopThemeMusic();
+        stopTavernMusic();
+      }
 
       // Forza l'aggiornamento immediato delle dimensioni del Canvas per rendere subito visibile il tavolo 3D
       onResize();
