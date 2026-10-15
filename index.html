@@ -1,0 +1,2190 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Nerdice - Lancia dadi Nerd</title>
+
+  <!-- PWA & Mobile Web App Meta Tags per Android -->
+  <meta name="application-name" content="Nerdice">
+  <meta name="apple-mobile-web-app-title" content="Nerdice">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#07090f">
+
+  <!-- Icona SVG incorporata ad alta risoluzione -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%23f59e0b'/%3E%3Cstop offset='50%25' stop-color='%23f43f5e'/%3E%3Cstop offset='100%25' stop-color='%236366f1'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='24' fill='%230f172a'/%3E%3Cpath d='M50 14 L84 32 L84 68 L50 86 L16 68 L16 32 Z' fill='url(%23g)' stroke='%23ffffff' stroke-width='3' stroke-linejoin='round'/%3E%3Ccircle cx='50' cy='50' r='10' fill='%23ffffff'/%3E%3Ctext x='50' y='54' font-family='sans-serif' font-weight='900' font-size='11' fill='%230f172a' text-anchor='middle'%3E20%3C/text%3E%3C/svg%3E">
+
+  <!-- Manifest PWA Web Inline -->
+  <link rel="manifest" href='data:application/manifest+json,{"name":"Nerdice - Lancia dadi Nerd","short_name":"Nerdice","description":"Lancia dadi Nerd con simulatore 3D, skins, multiplayer e CSPRNG","start_url":".","display":"standalone","orientation":"portrait","background_color":"%2307090f","theme_color":"%2307090f","icons":[{"src":"data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Cdefs%3E%3ClinearGradient id=%27g%27 x1=%270%25%27 y1=%270%25%27 x2=%27100%25%27 y2=%27100%25%27%3E%3Cstop offset=%270%25%27 stop-color=%27%23f59e0b%27/%3E%3Cstop offset=%2750%25%27 stop-color=%27%23f43f5e%27/%3E%3Cstop offset=%27100%25%27 stop-color=%27%236366f1%27/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width=%27100%27 height=%27100%27 rx=%2724%27 fill=%27%230f172a%27/%3E%3Cpath d=%27M50 14 L84 32 L84 68 L50 86 L16 68 L16 32 Z%27 fill=%27url(%23g)%27 stroke=%27%23ffffff%27 stroke-width=%273%27 stroke-linejoin=%27round%27/%3E%3Ccircle cx=%2750%27 cy=%2750%27 r=%2710%27 fill=%27%23ffffff%27/%3E%3Ctext x=%2750%27 y=%2754%27 font-family=%27sans-serif%27 font-weight=%27900%27 font-size=%2711%27 fill=%27%230f172a%27 text-anchor=%27middle%27%3E20%3C/text%3E%3C/svg%3E","sizes":"192x192 512x512","type":"image/svg+xml","purpose":"any maskable"}]}'>
+
+  <!-- Tailwind CSS & FontAwesome -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Three.js r128 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=Fredoka:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: radial-gradient(circle at 50% 20%, #151928 0%, #07090f 100%);
+      color: #f1f5f9;
+      min-height: 100vh;
+      overflow-x: hidden;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .font-rpg { font-family: 'Cinzel', serif; }
+    .font-fun { font-family: 'Fredoka', sans-serif; }
+
+    #diceCanvasContainer {
+      position: relative;
+      width: 100%;
+      height: 380px;
+      border-radius: 1.25rem;
+      overflow: hidden;
+      background: #091310;
+      box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.9), 0 20px 40px -10px rgba(0, 0, 0, 0.8);
+      touch-action: none;
+    }
+
+    @media (min-width: 768px) {
+      #diceCanvasContainer {
+        height: 440px;
+      }
+    }
+
+    .tray-theme-btn.active-tray {
+      border-color: #f59e0b;
+      background: rgba(245, 158, 11, 0.2);
+      box-shadow: 0 0 14px rgba(245, 158, 11, 0.35);
+    }
+
+    .player-pill-active {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.25) 0%, rgba(244, 63, 94, 0.25) 100%);
+      border: 2px solid #f59e0b;
+      box-shadow: 0 0 16px rgba(245, 158, 11, 0.4);
+    }
+
+    .player-pill-idle {
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      opacity: 0.75;
+    }
+
+    #labelsOverlay {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .die-float-badge {
+      position: absolute;
+      transform: translate(-50%, -100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: opacity 0.3s ease, transform 0.25s ease;
+      filter: drop-shadow(0 10px 15px rgba(0,0,0,0.7));
+      z-index: 30;
+    }
+
+    .die-float-pill {
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      border: 2px solid #f59e0b;
+      color: #ffffff;
+      padding: 5px 12px;
+      border-radius: 9999px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 800;
+      box-shadow: 0 0 18px rgba(245, 158, 11, 0.45);
+      animation: floatPulse 2s ease-in-out infinite;
+    }
+
+    .die-float-pin {
+      width: 2px;
+      height: 22px;
+      background: linear-gradient(to bottom, #f59e0b, rgba(245, 158, 11, 0.15));
+    }
+
+    @keyframes floatPulse {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-3px); }
+    }
+
+    .result-poly-card {
+      background: linear-gradient(145deg, rgba(30, 41, 59, 0.85) 0%, rgba(15, 23, 42, 0.95) 100%);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.2s ease;
+    }
+
+    .result-poly-card:hover {
+      transform: translateY(-3px) scale(1.02);
+      border-color: rgba(245, 158, 11, 0.5);
+    }
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); }
+    ::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.25); border-radius: 999px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(148, 163, 184, 0.45); }
+  </style>
+</head>
+
+<body class="flex flex-col justify-between min-h-screen p-3 sm:p-6">
+
+  <!-- HEADER -->
+  <header class="w-full max-w-5xl mx-auto flex items-center justify-between pb-3 border-b border-slate-800/80 mb-4 sm:mb-6">
+    <div class="flex items-center space-x-3.5">
+      <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-500 via-rose-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-amber-500/25">
+        <i class="fa-solid fa-dice-d20 text-white text-2xl"></i>
+      </div>
+      <div>
+        <h1 class="text-xl sm:text-2xl font-bold font-rpg tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-rose-300 to-indigo-300">
+          NERDICE
+        </h1>
+        <p class="text-[11px] sm:text-xs text-slate-400">Lancia dadi Nerd</p>
+      </div>
+    </div>
+
+    <div class="flex items-center space-x-2">
+      <button id="pwaInstallBtn" onclick="installPWA()" class="hidden px-3 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-rose-500 text-slate-950 font-bold text-xs shadow-md shadow-amber-500/20 items-center gap-1.5 transition active:scale-95">
+        <i class="fa-solid fa-download"></i>
+        <span>Installa</span>
+      </button>
+
+      <button id="soundBtn" onclick="toggleAudio()" class="p-2.5 rounded-xl bg-slate-800/90 border border-slate-700/80 hover:bg-slate-700 text-slate-300 transition" title="Attiva/Disattiva Suono">
+        <i id="soundIcon" class="fa-solid fa-volume-high text-amber-400"></i>
+      </button>
+      <button onclick="toggleModal('infoModal')" class="p-2.5 rounded-xl bg-slate-800/90 border border-slate-700/80 hover:bg-slate-700 text-slate-300 transition" title="Regole e Poliedri">
+        <i class="fa-solid fa-circle-info"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- CONTENUTO PRINCIPALE -->
+  <main class="w-full max-w-5xl mx-auto flex-grow flex flex-col justify-center">
+
+    <!-- 1. CONFIGURATORE DADI -->
+    <section id="configPanel" class="w-full bg-slate-800/70 backdrop-blur-md rounded-3xl p-5 sm:p-8 border border-slate-700/80 shadow-2xl">
+      <div class="text-center mb-6">
+        <h2 class="text-2xl sm:text-3xl font-fun font-bold text-white">Configura i tuoi Dadi</h2>
+        <p class="text-xs sm:text-sm text-slate-400 mt-1">Scegli la quantità (1-10) e il numero di facce.</p>
+      </div>
+
+      <!-- Selezione Giocatori (1 - 8) -->
+      <div class="mb-5 bg-slate-900/80 rounded-2xl p-4 sm:p-5 border border-slate-800">
+        <div class="flex justify-between items-center mb-3">
+          <label class="font-medium text-slate-200 flex items-center gap-2 text-sm sm:text-base">
+            <i class="fa-solid fa-users text-indigo-400"></i> Quanti giocatori partecipano?
+          </label>
+          <span id="playerCountTag" class="text-xl font-bold font-fun text-indigo-400 bg-indigo-400/10 px-3.5 py-1 rounded-xl border border-indigo-400/30">
+            1 Giocatore
+          </span>
+        </div>
+        <div class="flex items-center space-x-3 mb-3">
+          <button type="button" onclick="changePlayerCount(-1)" class="w-10 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 flex items-center justify-center font-bold text-lg active:scale-95 transition">-</button>
+          <input type="range" id="playerCountSlider" min="1" max="8" value="1" oninput="setPlayerCount(this.value)" class="w-full accent-indigo-500 h-2 bg-slate-700 rounded-lg cursor-pointer">
+          <button type="button" onclick="changePlayerCount(1)" class="w-10 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 flex items-center justify-center font-bold text-lg active:scale-95 transition">+</button>
+        </div>
+        
+        <!-- Nomi dei giocatori configurabili -->
+        <div id="playerNamesList" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 pt-2 border-t border-slate-800"></div>
+      </div>
+
+      <!-- Selezione quantità dadi (1-10) -->
+      <div class="mb-5 bg-slate-900/80 rounded-2xl p-4 sm:p-5 border border-slate-800">
+        <div class="flex justify-between items-center mb-3">
+          <label class="font-medium text-slate-200 flex items-center gap-2 text-sm sm:text-base">
+            <i class="fa-solid fa-layer-group text-amber-400"></i> Quanti dadi vuoi lanciare?
+          </label>
+          <span id="diceQtyTag" class="text-xl font-bold font-fun text-amber-400 bg-amber-400/10 px-3.5 py-1 rounded-xl border border-amber-400/30">
+            2
+          </span>
+        </div>
+        <div class="flex items-center space-x-3">
+          <button type="button" onclick="changeDiceQty(-1)" class="w-10 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 flex items-center justify-center font-bold text-lg active:scale-95 transition">-</button>
+          <input type="range" id="diceQtySlider" min="1" max="10" value="2" oninput="setDiceQty(this.value)" class="w-full accent-amber-500 h-2 bg-slate-700 rounded-lg cursor-pointer">
+          <button type="button" onclick="changeDiceQty(1)" class="w-10 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 flex items-center justify-center font-bold text-lg active:scale-95 transition">+</button>
+        </div>
+        <div class="flex justify-between text-[11px] text-slate-500 mt-1.5 px-1 font-mono">
+          <span>1 dado</span>
+          <span>5 dadi</span>
+          <span>10 dadi max</span>
+        </div>
+      </div>
+
+      <!-- Scelta Facce / Sagome -->
+      <div class="mb-5 bg-slate-900/80 rounded-2xl p-4 sm:p-5 border border-slate-800">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+          <label class="font-medium text-slate-200 flex items-center gap-2 text-sm sm:text-base">
+            <i class="fa-solid fa-shapes text-rose-400"></i> Quante facce ha ciascun dado?
+          </label>
+          <div class="flex bg-slate-800 p-1 rounded-xl text-xs font-medium border border-slate-700 self-start sm:self-auto">
+            <button id="modeSameTab" onclick="switchFacesMode('same')" class="px-3 py-1.5 rounded-lg bg-indigo-600 text-white font-semibold transition">Tutti con le stesse facce</button>
+            <button id="modeCustomTab" onclick="switchFacesMode('custom')" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition">Configura singolarmente</button>
+          </div>
+        </div>
+
+        <!-- Sezione Tutti Uguali -->
+        <div id="sameFacesWrap">
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2.5">
+            <button type="button" onclick="setCommonFaces(4)" class="preset-tile p-3.5 rounded-2xl border border-slate-700 bg-slate-800/90 hover:border-amber-400 transition text-center flex flex-col items-center justify-center gap-1" data-sides="4">
+              <span class="text-xl font-bold text-amber-400 font-fun">D4</span>
+              <span class="text-[11px] text-slate-400 font-medium">4 Facce</span>
+            </button>
+            <button type="button" onclick="setCommonFaces(6)" class="preset-tile active-preset p-3.5 rounded-2xl border-2 border-amber-400 bg-amber-500/20 transition text-center flex flex-col items-center justify-center gap-1" data-sides="6">
+              <span class="text-xl font-bold text-amber-300 font-fun">D6</span>
+              <span class="text-[11px] text-amber-300/80 font-medium">6 Facce</span>
+            </button>
+            <button type="button" onclick="setCommonFaces(8)" class="preset-tile p-3.5 rounded-2xl border border-slate-700 bg-slate-800/90 hover:border-amber-400 transition text-center flex flex-col items-center justify-center gap-1" data-sides="8">
+              <span class="text-xl font-bold text-cyan-400 font-fun">D8</span>
+              <span class="text-[11px] text-slate-400 font-medium">8 Facce</span>
+            </button>
+            <button type="button" onclick="setCommonFaces(10)" class="preset-tile p-3.5 rounded-2xl border border-slate-700 bg-slate-800/90 hover:border-amber-400 transition text-center flex flex-col items-center justify-center gap-1" data-sides="10">
+              <span class="text-xl font-bold text-emerald-400 font-fun">D10</span>
+              <span class="text-[11px] text-slate-400 font-medium">10 Facce</span>
+            </button>
+            <button type="button" onclick="setCommonFaces(12)" class="preset-tile p-3.5 rounded-2xl border border-slate-700 bg-slate-800/90 hover:border-amber-400 transition text-center flex flex-col items-center justify-center gap-1" data-sides="12">
+              <span class="text-xl font-bold text-purple-400 font-fun">D12</span>
+              <span class="text-[11px] text-slate-400 font-medium">12 Facce</span>
+            </button>
+            <button type="button" onclick="setCommonFaces(20)" class="preset-tile p-3.5 rounded-2xl border border-slate-700 bg-slate-800/90 hover:border-amber-400 transition text-center flex flex-col items-center justify-center gap-1" data-sides="20">
+              <span class="text-xl font-bold text-pink-400 font-fun">D20</span>
+              <span class="text-[11px] text-slate-400 font-medium">20 Facce</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Sezione Personalizzata per Dado -->
+        <div id="customFacesWrap" class="hidden">
+          <div id="individualDiceRows" class="space-y-2 max-h-56 overflow-y-auto pr-1"></div>
+        </div>
+      </div>
+
+      <!-- SELEZIONE SET / SKIN DADI -->
+      <div class="mb-6 bg-slate-900/80 rounded-2xl p-4 sm:p-5 border border-slate-800">
+        <div class="flex items-center justify-between mb-3">
+          <label class="font-medium text-slate-200 flex items-center gap-2 text-sm sm:text-base">
+            <i class="fa-solid fa-palette text-cyan-400"></i> Aspetto dei Dadi (Skin & Texture 3D)
+          </label>
+          <span id="activeSkinLabel" class="text-xs font-semibold px-2.5 py-1 rounded-lg bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+            Resina Classica
+          </span>
+        </div>
+
+        <!-- Griglia Temi Predefiniti -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 mb-3">
+          <button type="button" onclick="selectSkin('classic')" class="skin-btn active-skin p-2.5 rounded-xl border-2 border-amber-400 bg-amber-500/20 text-center flex flex-col items-center gap-1 transition" data-skin="classic">
+            <div class="w-7 h-7 rounded-lg bg-gradient-to-tr from-rose-500 via-amber-500 to-indigo-500 shadow"></div>
+            <span class="text-[11px] font-semibold text-white">Classico</span>
+          </button>
+          <button type="button" onclick="selectSkin('galaxy')" class="skin-btn p-2.5 rounded-xl border border-slate-700 bg-slate-800 hover:border-cyan-400 text-center flex flex-col items-center gap-1 transition" data-skin="galaxy">
+            <div class="w-7 h-7 rounded-lg bg-gradient-to-tr from-purple-900 via-indigo-600 to-cyan-400 shadow"></div>
+            <span class="text-[11px] font-semibold text-slate-300">Galassia</span>
+          </button>
+          <button type="button" onclick="selectSkin('magma')" class="skin-btn p-2.5 rounded-xl border border-slate-700 bg-slate-800 hover:border-orange-400 text-center flex flex-col items-center gap-1 transition" data-skin="magma">
+            <div class="w-7 h-7 rounded-lg bg-gradient-to-tr from-stone-900 via-red-700 to-amber-500 shadow"></div>
+            <span class="text-[11px] font-semibold text-slate-300">Magma</span>
+          </button>
+          <button type="button" onclick="selectSkin('marble')" class="skin-btn p-2.5 rounded-xl border border-slate-700 bg-slate-800 hover:border-slate-300 text-center flex flex-col items-center gap-1 transition" data-skin="marble">
+            <div class="w-7 h-7 rounded-lg bg-gradient-to-tr from-slate-200 via-slate-400 to-amber-200 shadow"></div>
+            <span class="text-[11px] font-semibold text-slate-300">Marmo</span>
+          </button>
+          <button type="button" onclick="selectSkin('emerald')" class="skin-btn p-2.5 rounded-xl border border-slate-700 bg-slate-800 hover:border-emerald-400 text-center flex flex-col items-center gap-1 transition" data-skin="emerald">
+            <div class="w-7 h-7 rounded-lg bg-gradient-to-tr from-emerald-950 via-emerald-600 to-teal-300 shadow"></div>
+            <span class="text-[11px] font-semibold text-slate-300">Smeraldo</span>
+          </button>
+          <button type="button" onclick="selectSkin('gold')" class="skin-btn p-2.5 rounded-xl border border-slate-700 bg-slate-800 hover:border-yellow-400 text-center flex flex-col items-center gap-1 transition" data-skin="gold">
+            <div class="w-7 h-7 rounded-lg bg-gradient-to-tr from-amber-700 via-yellow-400 to-amber-200 shadow"></div>
+            <span class="text-[11px] font-semibold text-slate-300">Oro Puro</span>
+          </button>
+        </div>
+
+        <!-- Caricamento Texture Personalizzata da Immagine -->
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-3 p-3 bg-slate-800/80 rounded-xl border border-slate-700">
+          <div class="flex items-center gap-2.5 w-full sm:w-auto">
+            <div id="customSkinPreview" class="w-10 h-10 rounded-lg bg-slate-900 border border-slate-600 flex items-center justify-center text-slate-500 overflow-hidden shrink-0">
+              <i class="fa-solid fa-image"></i>
+            </div>
+            <div>
+              <span class="text-xs font-bold text-white block">Oppure carica una tua immagine:</span>
+              <span class="text-[10px] text-slate-400">Texture per i dadi (PNG, JPG, WebP)</span>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
+            <label class="cursor-pointer px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-xs font-semibold text-slate-200 flex items-center gap-1.5 transition">
+              <i class="fa-solid fa-upload text-cyan-400"></i> Carica Immagine
+              <input type="file" id="skinFileInput" accept="image/*" class="hidden" onchange="handleCustomSkinUpload(event)">
+            </label>
+            <button id="removeCustomSkinBtn" onclick="removeCustomSkin()" class="hidden px-2.5 py-1.5 rounded-lg bg-rose-600/20 text-rose-300 hover:bg-rose-600 hover:text-white text-xs transition" title="Rimuovi immagine personalizzata">
+              <i class="fa-solid fa-trash-can"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- SELEZIONE TAVOLO / AMBIENTAZIONE (D&D, MEDIEVALE, FANTASY, STEAMPUNK) -->
+      <div class="mb-6 bg-slate-900/80 rounded-2xl p-4 sm:p-5 border border-slate-800">
+        <div class="flex items-center justify-between mb-3">
+          <label class="font-medium text-slate-200 flex items-center gap-2 text-sm sm:text-base">
+            <i class="fa-solid fa-dungeon text-amber-500"></i> Tavolo di Gioco 3D (Ambientazione GdR)
+          </label>
+          <span id="activeTrayLabel" class="text-xs font-semibold px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/30">
+            Taverna D&D (Legno)
+          </span>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
+          <!-- Casuale / Rotazione sempre diversa -->
+          <button type="button" onclick="selectTrayStyle('random')" class="tray-theme-btn p-2.5 rounded-xl border border-slate-700 bg-slate-800 text-center flex flex-col items-center gap-1.5 transition" data-tray="random">
+            <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-amber-500 via-purple-600 to-cyan-500 flex items-center justify-center text-white text-sm shadow">
+              <i class="fa-solid fa-shuffle"></i>
+            </div>
+            <span class="text-[11px] font-bold text-white">Sempre Diverso</span>
+            <span class="text-[9px] text-slate-400 -mt-1">Casuale</span>
+          </button>
+
+          <!-- Taverna D&D (Legno di quercia) -->
+          <button type="button" onclick="selectTrayStyle('wood')" class="tray-theme-btn active-tray p-2.5 rounded-xl border-2 border-amber-400 bg-amber-500/20 text-center flex flex-col items-center gap-1.5 transition" data-tray="wood">
+            <div class="w-8 h-8 rounded-lg bg-amber-900 border border-amber-700 flex items-center justify-center text-amber-200 text-sm shadow">
+              <i class="fa-solid fa-beer-mug-empty"></i>
+            </div>
+            <span class="text-[11px] font-bold text-white">Taverna D&D</span>
+            <span class="text-[9px] text-amber-300/80 -mt-1">Legno Antico</span>
+          </button>
+
+          <!-- Medievale Dungeon (Pietra runica) -->
+          <button type="button" onclick="selectTrayStyle('dungeon')" class="tray-theme-btn p-2.5 rounded-xl border border-slate-700 bg-slate-800 hover:border-slate-500 text-center flex flex-col items-center gap-1.5 transition" data-tray="dungeon">
+            <div class="w-8 h-8 rounded-lg bg-stone-700 border border-stone-500 flex items-center justify-center text-stone-200 text-sm shadow">
+              <i class="fa-solid fa-skull"></i>
+            </div>
+            <span class="text-[11px] font-bold text-slate-300">Cripta D&D</span>
+            <span class="text-[9px] text-slate-400 -mt-1">Pietra & Rupi</span>
+          </button>
+
+          <!-- Altare Arcano Fantasy -->
+          <button type="button" onclick="selectTrayStyle('arcane')" class="tray-theme-btn p-2.5 rounded-xl border border-slate-700 bg-slate-800 hover:border-purple-500 text-center flex flex-col items-center gap-1.5 transition" data-tray="arcane">
+            <div class="w-8 h-8 rounded-lg bg-indigo-950 border border-purple-500 flex items-center justify-center text-purple-300 text-sm shadow">
+              <i class="fa-solid fa-hat-wizard"></i>
+            </div>
+            <span class="text-[11px] font-bold text-slate-300">Altare Magico</span>
+            <span class="text-[9px] text-purple-300/80 -mt-1">Rune Arcane</span>
+          </button>
+
+          <!-- Steampunk Fonderia -->
+          <button type="button" onclick="selectTrayStyle('steampunk')" class="tray-theme-btn p-2.5 rounded-xl border border-slate-700 bg-slate-800 hover:border-amber-600 text-center flex flex-col items-center gap-1.5 transition" data-tray="steampunk">
+            <div class="w-8 h-8 rounded-lg bg-orange-950 border border-orange-600 flex items-center justify-center text-amber-400 text-sm shadow">
+              <i class="fa-solid fa-gears"></i>
+            </div>
+            <span class="text-[11px] font-bold text-slate-300">Steampunk</span>
+            <span class="text-[9px] text-amber-500/80 -mt-1">Ottone & Rivetti</span>
+          </button>
+
+          <!-- Feltro Classico -->
+          <button type="button" onclick="selectTrayStyle('felt')" class="tray-theme-btn p-2.5 rounded-xl border border-slate-700 bg-slate-800 hover:border-emerald-500 text-center flex flex-col items-center gap-1.5 transition" data-tray="felt">
+            <div class="w-8 h-8 rounded-lg bg-emerald-950 border border-emerald-600 flex items-center justify-center text-emerald-300 text-sm shadow">
+              <i class="fa-solid fa-dice-d6"></i>
+            </div>
+            <span class="text-[11px] font-bold text-slate-300">Feltro Verde</span>
+            <span class="text-[9px] text-emerald-400/80 -mt-1">Tradizionale</span>
+          </button>
+        </div>
+      </div>
+
+      <button type="button" onclick="triggerRollSequence()" class="w-full py-4 rounded-2xl bg-gradient-to-r from-amber-500 via-rose-500 to-indigo-600 hover:from-amber-400 hover:via-rose-400 hover:to-indigo-500 active:scale-[0.98] transition shadow-xl shadow-rose-500/25 flex items-center justify-center gap-3 font-fun font-bold text-xl text-white">
+        <i class="fa-solid fa-dice-d20 text-2xl"></i>
+        LANCIA NEL VASSOIO 3D
+      </button>
+    </section>
+
+    <!-- 2. ARENA 3D & RISULTATO GRAFICO/TESTUALE -->
+    <section id="arenaPanel" class="hidden w-full flex flex-col space-y-4">
+
+      <!-- Banner Turno Giocatore Attivo -->
+      <div id="activePlayerTurnBanner" class="bg-gradient-to-r from-slate-900 via-indigo-950/80 to-slate-900 border-2 border-indigo-500/40 rounded-2xl p-3.5 sm:p-4 shadow-xl flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <div id="activePlayerBadgeAvatar" class="w-12 h-12 rounded-2xl flex items-center justify-center text-white font-fun font-bold text-xl shadow-lg border border-white/20" style="background:#f59e0b">
+            P1
+          </div>
+          <div>
+            <div class="text-[11px] uppercase tracking-wider text-slate-400 font-semibold flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+              <span>Lancio in corso</span>
+              <span class="text-slate-500">•</span>
+              <span id="arenaRoundIndicator" class="text-indigo-300 font-mono">Round 1</span>
+            </div>
+            <h3 id="activePlayerNameText" class="text-lg sm:text-xl font-bold font-fun text-white">Giocatore 1</h3>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <span id="playerTurnActionPill" class="px-3 py-1.5 rounded-xl bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-xs font-semibold flex items-center gap-1.5">
+            <i class="fa-solid fa-dice text-amber-400"></i> Tocca a te lanciare!
+          </span>
+        </div>
+      </div>
+
+      <!-- VASSOIO 3D -->
+      <div class="relative w-full bg-slate-900 rounded-3xl border-2 border-slate-700/80 shadow-2xl p-2 sm:p-3">
+        <div class="flex items-center justify-between px-3 py-2 border-b border-slate-800 text-xs">
+          <div id="rollingStatePill" class="px-3 py-1 rounded-full font-bold uppercase tracking-wider bg-rose-500/20 text-rose-300 border border-rose-500/30 flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-rose-400 animate-ping"></span>
+            I dadi stanno rotolando nel vassoio...
+          </div>
+          
+          <div class="flex items-center gap-2">
+            <!-- Cambio Rapido Tavolo al Volo -->
+            <button onclick="cycleTrayThemeQuickly()" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 font-semibold flex items-center gap-1.5 transition" title="Cambia stile tavolo">
+              <i class="fa-solid fa-dungeon text-xs"></i>
+              <span id="quickTrayName" class="hidden sm:inline">Taverna D&D</span>
+              <i class="fa-solid fa-shuffle text-[10px] text-slate-400"></i>
+            </button>
+            <span class="text-slate-400 font-mono hidden sm:inline">
+              <i class="fa-solid fa-hand-pointer text-amber-400 mr-1"></i> Ruota visuale
+            </span>
+          </div>
+        </div>
+
+        <div id="diceCanvasContainer">
+          <div id="labelsOverlay"></div>
+        </div>
+      </div>
+
+      <!-- TABELLONE PUNTEGGI DI TUTTI I GIOCATORI -->
+      <div class="bg-slate-800/85 backdrop-blur-md rounded-2xl p-4 sm:p-5 border border-slate-700 shadow-xl">
+        <div class="flex items-center justify-between border-b border-slate-700/80 pb-3 mb-3">
+          <h3 class="font-fun font-bold text-base sm:text-lg text-white flex items-center gap-2">
+            <i class="fa-solid fa-trophy text-amber-400"></i> Punteggi Giocatori
+          </h3>
+          <span class="text-xs text-slate-400" id="totalPlayersBadge">1 Giocatore</span>
+        </div>
+        <div id="multiplayerScoreboardGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5 mb-2"></div>
+      </div>
+
+      <!-- SEZIONE RISULTATI DETTAGLIATI (MAI COPERTI) -->
+      <div class="bg-slate-800/85 backdrop-blur-md rounded-2xl p-4 sm:p-6 border border-slate-700 shadow-xl">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 border-b border-slate-700/70 pb-3">
+          <div>
+            <h3 class="font-fun font-bold text-lg text-white flex items-center gap-2">
+              <i class="fa-solid fa-list-check text-amber-400"></i> Risultati Dettagliati per Dado
+            </h3>
+            <p class="text-xs text-slate-400">Ogni dado è associato alla sua forma geometrica esatta, con valore leggibile al 100%.</p>
+          </div>
+        </div>
+
+        <div id="polyhedralResultsGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 mb-5"></div>
+
+        <!-- Solo Somma Totale -->
+        <div class="bg-slate-900/90 rounded-2xl p-5 border border-slate-800 flex items-center justify-center">
+          <div class="flex items-center justify-center gap-4 bg-slate-800/90 px-8 py-3.5 rounded-2xl border border-amber-500/30 shadow-lg shadow-amber-500/10">
+            <span class="text-sm uppercase font-extrabold tracking-widest text-amber-300/80">Somma Totale:</span>
+            <span id="valTotalSum" class="text-4xl sm:text-5xl font-fun font-bold text-amber-400 leading-none">--</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- BOTTONI DI AZIONE: Sulla stessa riga -->
+      <div class="bg-slate-800/75 backdrop-blur-md rounded-2xl p-3 sm:p-4 border border-slate-700 shadow-xl">
+        <div class="grid grid-cols-3 gap-2.5 sm:gap-3 w-full">
+          <button id="reRollOrNextBtn" onclick="advanceOrRerollTurn()" class="w-full px-3 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 active:scale-95 transition text-center">
+            <i class="fa-solid fa-rotate-right shrink-0"></i>
+            <span id="reRollBtnLabel" class="truncate">Lancia ancora (stessi dadi)</span>
+          </button>
+
+          <button onclick="showConfigScreen()" class="w-full px-3 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/20 active:scale-95 transition text-center">
+            <i class="fa-solid fa-sliders shrink-0"></i>
+            <span class="truncate">Lancia dadi diversi</span>
+          </button>
+
+          <button onclick="promptExitModal()" class="w-full px-3 py-3 rounded-xl bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/40 font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 active:scale-95 transition text-center">
+            <i class="fa-solid fa-door-open shrink-0"></i>
+            <span class="truncate">Esci dall'app</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- CRONOLOGIA RECENTE -->
+      <div class="bg-slate-900/70 rounded-2xl p-4 border border-slate-800 text-xs">
+        <div class="flex items-center justify-between mb-2">
+          <span class="font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+            <i class="fa-solid fa-clock-rotate-left text-amber-400"></i> Cronologia lanci della sessione
+          </span>
+          <button onclick="clearHistory()" class="text-slate-500 hover:text-rose-400 transition text-[11px]">Svuota</button>
+        </div>
+        <div id="historyLog" class="flex flex-col gap-1.5 max-h-24 overflow-y-auto pr-1">
+          <span class="text-slate-600 italic">Nessun lancio precedente in cronologia.</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. SCHERMATA FINALE DI USCITA -->
+    <section id="exitSummaryPanel" class="hidden w-full max-w-2xl mx-auto bg-slate-800/90 backdrop-blur-md rounded-3xl p-6 sm:p-8 border border-slate-700 text-center shadow-2xl">
+      <div class="w-16 h-16 mx-auto rounded-3xl bg-gradient-to-tr from-amber-500 via-rose-500 to-indigo-600 flex items-center justify-center text-white text-3xl shadow-lg shadow-rose-500/30 mb-4">
+        <i class="fa-solid fa-trophy"></i>
+      </div>
+      <h2 class="text-2xl sm:text-3xl font-fun font-bold text-white mb-2">Sessione Conclusa!</h2>
+      <p class="text-sm text-slate-300 mb-6">Classifica finale e riepilogo complessivo dei punteggi:</p>
+
+      <div id="exitLeaderboard" class="mb-6 space-y-2 text-left"></div>
+
+      <div class="bg-slate-900/80 p-4 rounded-2xl border border-slate-800 text-xs text-slate-400 mb-6 flex justify-around">
+        <div>
+          <span class="block text-2xl font-bold text-white font-fun" id="exitTotalRolls">0</span>
+          Lanci Effettuati
+        </div>
+        <div class="w-px bg-slate-800"></div>
+        <div>
+          <span class="block text-2xl font-bold text-amber-400 font-fun" id="exitTotalDice">0</span>
+          Dadi Totali
+        </div>
+        <div class="w-px bg-slate-800"></div>
+        <div>
+          <span class="block text-2xl font-bold text-rose-400 font-fun" id="exitTotalScore">0</span>
+          Punti Cumulati
+        </div>
+      </div>
+
+      <button type="button" onclick="restartApp()" class="w-full py-4 rounded-2xl bg-gradient-to-r from-amber-500 to-rose-500 hover:from-amber-400 hover:to-rose-400 text-white font-bold font-fun tracking-wider shadow-lg shadow-rose-500/25 transition active:scale-95 text-lg">
+        <i class="fa-solid fa-rotate-left mr-2"></i> Riapri App e Nuova Partita
+      </button>
+    </section>
+
+  </main>
+
+  <!-- MODALE CONFERMA USCITA -->
+  <div id="exitConfirmModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-800 border border-slate-700 max-w-sm w-full rounded-2xl p-6 shadow-2xl text-center">
+      <div class="w-12 h-12 rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/30 flex items-center justify-center mx-auto mb-3 text-xl">
+        <i class="fa-solid fa-door-open"></i>
+      </div>
+      <h3 class="text-lg font-bold font-fun text-white mb-1">Vuoi davvero uscire?</h3>
+      <p class="text-xs text-slate-300 mb-5">Verrai reindirizzato alla classifica finale della sessione.</p>
+      <div class="flex gap-2">
+        <button onclick="toggleModal('exitConfirmModal')" class="flex-1 py-2.5 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-bold uppercase transition">
+          Annulla
+        </button>
+        <button onclick="executeExit()" class="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold uppercase transition">
+          Conferma Uscita
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODALE INFO POLIEDRI -->
+  <div id="infoModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-800 border border-slate-700 max-w-md w-full rounded-2xl p-6 shadow-2xl">
+      <div class="flex justify-between items-center mb-3">
+        <h3 class="text-lg font-bold font-fun text-white flex items-center gap-2">
+          <i class="fa-solid fa-circle-info text-amber-400"></i> Informazioni Lancio Dadi
+        </h3>
+        <button onclick="toggleModal('infoModal')" class="text-slate-400 hover:text-white">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+      <ul class="text-xs text-slate-300 space-y-2 list-disc list-inside mb-4 leading-relaxed">
+        <li><strong>Dadi supportati:</strong> D4, D6, D8, D10, D12 e D20.</li>
+        <li><strong>Modalità da 1 a 8 giocatori:</strong> con tracciamento punteggio live e round continui.</li>
+        <li><strong>Set di dadi & Skin:</strong> Scegli tra 6 skin o carica la tua immagine personale.</li>
+        <li><strong>Zero sovrapposizioni:</strong> I risultati fluttuano sopra i dadi con pin luminoso dedicato.</li>
+      </ul>
+      <button onclick="toggleModal('infoModal')" class="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold uppercase tracking-wider transition">
+        Ho Capito
+      </button>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="w-full max-w-5xl mx-auto text-center py-3 text-xs text-slate-500 border-t border-slate-800/80 mt-4">
+    Nerdice • Lancia dadi Nerd
+  </footer>
+
+  <script>
+    /* =================================================================
+       CONFIGURAZIONE GLOBALE DEI DADI, COLORI E GIOCATORI
+       ================================================================= */
+    const POLYHEDRA = {
+      4: {
+        name: 'D4',
+        colorHex: '#f59e0b',
+        colorThree: 0xf59e0b,
+        svg: `<svg viewBox="0 0 24 24" class="w-7 h-7 text-amber-400" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 22 19 2 19"/><line x1="12" y1="2" x2="12" y2="19"/></svg>`
+      },
+      6: {
+        name: 'D6',
+        colorHex: '#e11d48',
+        colorThree: 0xe11d48,
+        svg: `<svg viewBox="0 0 24 24" class="w-7 h-7 text-rose-500" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8" cy="8" r="1.5" fill="currentColor"/><circle cx="16" cy="16" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg>`
+      },
+      8: {
+        name: 'D8',
+        colorHex: '#06b6d4',
+        colorThree: 0x06b6d4,
+        svg: `<svg viewBox="0 0 24 24" class="w-7 h-7 text-cyan-400" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 22 12 12 22 2 12"/><line x1="2" y1="12" x2="22" y2="12"/></svg>`
+      },
+      10: {
+        name: 'D10',
+        colorHex: '#10b981',
+        colorThree: 0x10b981,
+        svg: `<svg viewBox="0 0 24 24" class="w-7 h-7 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 21 9 17 21 7 21 3 9"/><line x1="12" y1="2" x2="12" y2="21"/></svg>`
+      },
+      12: {
+        name: 'D12',
+        colorHex: '#8b5cf6',
+        colorThree: 0x8b5cf6,
+        svg: `<svg viewBox="0 0 24 24" class="w-7 h-7 text-purple-400" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 21 8.5 17.5 19 6.5 19 3 8.5"/><polygon points="12 6 17 10 15 16 9 16 7 10"/></svg>`
+      },
+      20: {
+        name: 'D20',
+        colorHex: '#ec4899',
+        colorThree: 0xec4899,
+        svg: `<svg viewBox="0 0 24 24" class="w-7 h-7 text-pink-400" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 21.5 7.5 21.5 16.5 12 22 2.5 16.5 2.5 7.5"/><polygon points="12 6.5 18 10 18 15 12 18.5 6 15 6 10"/></svg>`
+      }
+    };
+
+    const PLAYER_COLORS = [
+      { bg: '#f59e0b', text: '#ffffff' },
+      { bg: '#06b6d4', text: '#ffffff' },
+      { bg: '#ec4899', text: '#ffffff' },
+      { bg: '#10b981', text: '#ffffff' },
+      { bg: '#8b5cf6', text: '#ffffff' },
+      { bg: '#f97316', text: '#ffffff' },
+      { bg: '#3b82f6', text: '#ffffff' },
+      { bg: '#e11d48', text: '#ffffff' }
+    ];
+
+    const appState = {
+      sound: true,
+      diceQty: 2,
+      mode: 'same',
+      commonFaces: 6,
+      customList: [6, 6],
+      currentRolls: [],
+      history: [],
+      playerCount: 1,
+      players: [
+        { id: 0, name: 'Giocatore 1', color: PLAYER_COLORS[0], totalScore: 0, lastScore: 0, rollCount: 0 }
+      ],
+      activePlayerIndex: 0,
+      currentRound: 1,
+      sessionStats: {
+        totalRolls: 0,
+        totalDice: 0,
+        totalScore: 0
+      },
+      isRolling: false,
+      currentSkin: 'classic',
+      customSkinImage: null,
+      customThreeTexture: null,
+      trayStyle: 'wood', // 'wood' | 'dungeon' | 'arcane' | 'steampunk' | 'felt' | 'random'
+      activeRenderedTrayStyle: 'wood'
+    };
+
+    /* Generatore Crittografico Equiprobabile CSPRNG */
+    function getRandomIntInclusive(min, max) {
+      const range = max - min + 1;
+      if (range <= 0) return min;
+      const cryptoObj = window.crypto || window.msCrypto;
+      if (cryptoObj && cryptoObj.getRandomValues) {
+        const maxUint32 = 0xFFFFFFFF;
+        const limit = maxUint32 - (maxUint32 % range);
+        const randomBuffer = new Uint32Array(1);
+        let randomVal;
+        do {
+          cryptoObj.getRandomValues(randomBuffer);
+          randomVal = randomBuffer[0];
+        } while (randomVal >= limit);
+        return min + (randomVal % range);
+      }
+      return Math.floor(Math.random() * range) + min;
+    }
+
+    function rollCryptographicDie(sides) {
+      return getRandomIntInclusive(1, sides);
+    }
+
+    /* Web Audio API Sintetizzato */
+    let audioContext = null;
+    function getAudioCtx() {
+      if (!audioContext) {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        audioContext = new AudioCtx();
+      }
+      if (audioContext.state === 'suspended') {
+        audioContext.resume();
+      }
+      return audioContext;
+    }
+
+    function playFX(soundName) {
+      if (!appState.sound) return;
+      try {
+        const ctx = getAudioCtx();
+        const now = ctx.currentTime;
+        if (soundName === 'roll') {
+          for (let i = 0; i < 6; i++) {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            const delay = i * 0.07 + Math.random() * 0.03;
+            osc.type = i % 2 === 0 ? 'triangle' : 'sine';
+            osc.frequency.setValueAtTime(320 - i * 25 + Math.random() * 40, now + delay);
+            osc.frequency.exponentialRampToValueAtTime(80, now + delay + 0.06);
+            gain.gain.setValueAtTime(0.18, now + delay);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + delay + 0.06);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(now + delay);
+            osc.stop(now + delay + 0.07);
+          }
+        } else if (soundName === 'settle') {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(160, now);
+          osc.frequency.exponentialRampToValueAtTime(50, now + 0.16);
+          gain.gain.setValueAtTime(0.35, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.16);
+        } else if (soundName === 'click') {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(600, now);
+          gain.gain.setValueAtTime(0.08, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.05);
+        }
+      } catch (err) {
+        console.warn('Audio non riproducibile:', err);
+      }
+    }
+
+    function toggleAudio() {
+      appState.sound = !appState.sound;
+      const icon = document.getElementById('soundIcon');
+      if (appState.sound) {
+        icon.className = 'fa-solid fa-volume-high text-amber-400';
+        playFX('click');
+      } else {
+        icon.className = 'fa-solid fa-volume-xmark text-slate-500';
+      }
+    }
+
+    /* Gestione Giocatori e Turni */
+    function setPlayerCount(num) {
+      num = parseInt(num, 10);
+      if (isNaN(num) || num < 1) num = 1;
+      if (num > 8) num = 8;
+      appState.playerCount = num;
+
+      document.getElementById('playerCountSlider').value = num;
+      document.getElementById('playerCountTag').textContent = num === 1 ? '1 Giocatore' : `${num} Giocatori`;
+      document.getElementById('totalPlayersBadge').textContent = num === 1 ? '1 Giocatore' : `${num} Giocatori`;
+
+      while (appState.players.length < num) {
+        const nextIdx = appState.players.length;
+        const col = PLAYER_COLORS[nextIdx % PLAYER_COLORS.length];
+        appState.players.push({
+          id: nextIdx,
+          name: `Giocatore ${nextIdx + 1}`,
+          color: col,
+          totalScore: 0,
+          lastScore: 0,
+          rollCount: 0
+        });
+      }
+      if (appState.players.length > num) {
+        appState.players = appState.players.slice(0, num);
+      }
+      if (appState.activePlayerIndex >= num) {
+        appState.activePlayerIndex = 0;
+      }
+      renderPlayerConfigInputs();
+      renderMultiplayerScoreboard();
+    }
+
+    function changePlayerCount(delta) {
+      playFX('click');
+      const target = appState.playerCount + delta;
+      if (target >= 1 && target <= 8) setPlayerCount(target);
+    }
+
+    function renderPlayerConfigInputs() {
+      const container = document.getElementById('playerNamesList');
+      if (!container) return;
+      container.innerHTML = '';
+      appState.players.forEach((p, idx) => {
+        const wrap = document.createElement('div');
+        wrap.className = 'flex items-center gap-2 bg-slate-800/80 p-2 rounded-xl border border-slate-700/80';
+        wrap.innerHTML = `
+          <div class="w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 text-white shadow" style="background:${p.color.bg}">
+            P${idx + 1}
+          </div>
+          <input type="text" value="${p.name}" oninput="updatePlayerName(${idx}, this.value)" class="w-full bg-slate-900 border border-slate-700 text-xs text-white rounded-lg px-2 py-1 focus:outline-none focus:border-indigo-400" placeholder="Nome Giocatore ${idx + 1}">
+        `;
+        container.appendChild(wrap);
+      });
+    }
+
+    function updatePlayerName(idx, val) {
+      if (appState.players[idx]) {
+        appState.players[idx].name = val.trim() || `Giocatore ${idx + 1}`;
+        renderMultiplayerScoreboard();
+        updateActivePlayerUI();
+      }
+    }
+
+    function updateActivePlayerUI() {
+      const activeP = appState.players[appState.activePlayerIndex];
+      if (!activeP) return;
+
+      const avatar = document.getElementById('activePlayerBadgeAvatar');
+      const nameText = document.getElementById('activePlayerNameText');
+      const actionPill = document.getElementById('playerTurnActionPill');
+      const roundLabel = document.getElementById('arenaRoundIndicator');
+      const reRollLabel = document.getElementById('reRollBtnLabel');
+
+      if (avatar) {
+        avatar.style.background = activeP.color.bg;
+        avatar.textContent = `P${activeP.id + 1}`;
+      }
+      if (nameText) nameText.textContent = activeP.name;
+      if (roundLabel) roundLabel.textContent = `Round ${appState.currentRound}`;
+      if (actionPill) {
+        actionPill.innerHTML = `<i class="fa-solid fa-dice text-amber-400"></i> Turno di ${activeP.name}`;
+      }
+      if (reRollLabel) {
+        if (appState.playerCount > 1) {
+          const nextIdx = (appState.activePlayerIndex + 1) % appState.playerCount;
+          const nextP = appState.players[nextIdx];
+          reRollLabel.textContent = `Prossimo: ${nextP.name}`;
+        } else {
+          reRollLabel.textContent = 'Lancia ancora (stessi dadi)';
+        }
+      }
+    }
+
+    function renderMultiplayerScoreboard() {
+      const container = document.getElementById('multiplayerScoreboardGrid');
+      if (!container) return;
+      container.innerHTML = '';
+      appState.players.forEach((p, idx) => {
+        const isActive = idx === appState.activePlayerIndex;
+        const card = document.createElement('div');
+        card.className = `p-3 rounded-2xl flex items-center justify-between transition-all duration-200 ${isActive ? 'player-pill-active' : 'player-pill-idle'}`;
+        card.innerHTML = `
+          <div class="flex items-center gap-2.5 truncate">
+            <div class="w-9 h-9 rounded-xl flex items-center justify-center font-bold text-sm shrink-0 text-white shadow-md" style="background:${p.color.bg}">
+              P${idx + 1}
+            </div>
+            <div class="truncate">
+              <div class="text-xs font-bold text-white flex items-center gap-1.5 truncate">
+                <span class="truncate">${p.name}</span>
+                ${isActive ? '<span class="text-[9px] px-1.5 py-0.2 rounded bg-amber-400 text-slate-950 font-extrabold uppercase">Turno</span>' : ''}
+              </div>
+              <div class="text-[10px] text-slate-400">Ultimo tiro: <strong class="text-amber-300 font-fun">${p.lastScore}</strong> (Lanci: ${p.rollCount})</div>
+            </div>
+          </div>
+          <div class="text-right shrink-0 pl-2">
+            <span class="text-[9px] uppercase font-bold tracking-wider text-slate-400 block">Totale</span>
+            <span class="text-xl font-fun font-bold text-amber-400">${p.totalScore}</span>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function advanceOrRerollTurn() {
+      if (appState.isRolling) return;
+      if (appState.playerCount > 1) {
+        appState.activePlayerIndex = (appState.activePlayerIndex + 1) % appState.playerCount;
+        if (appState.activePlayerIndex === 0) {
+          appState.currentRound++;
+        }
+        updateActivePlayerUI();
+        renderMultiplayerScoreboard();
+      }
+      triggerRollSequence();
+    }
+
+    /* Generazione Texture Procedurali per i Set */
+    function createProceduralTexture(type) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 512;
+      canvas.height = 512;
+      const ctx = canvas.getContext('2d');
+
+      if (type === 'galaxy') {
+        const grad = ctx.createLinearGradient(0, 0, 512, 512);
+        grad.addColorStop(0, '#0f051d');
+        grad.addColorStop(0.5, '#2e0854');
+        grad.addColorStop(1, '#06b6d4');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, 512, 512);
+        for (let i = 0; i < 220; i++) {
+          ctx.fillStyle = i % 2 === 0 ? '#ffffff' : '#f472b6';
+          ctx.beginPath();
+          ctx.arc(Math.random() * 512, Math.random() * 512, Math.random() * 2.5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      } else if (type === 'magma') {
+        ctx.fillStyle = '#111114';
+        ctx.fillRect(0, 0, 512, 512);
+        ctx.lineWidth = 4;
+        for (let i = 0; i < 18; i++) {
+          ctx.strokeStyle = i % 2 === 0 ? '#ea580c' : '#fbbf24';
+          ctx.beginPath();
+          ctx.moveTo(Math.random() * 512, Math.random() * 512);
+          ctx.bezierCurveTo(Math.random() * 512, Math.random() * 512, Math.random() * 512, Math.random() * 512, Math.random() * 512, Math.random() * 512);
+          ctx.stroke();
+        }
+      } else if (type === 'marble') {
+        ctx.fillStyle = '#f8fafc';
+        ctx.fillRect(0, 0, 512, 512);
+        ctx.lineWidth = 2.5;
+        for (let i = 0; i < 14; i++) {
+          ctx.strokeStyle = i % 2 === 0 ? '#94a3b8' : '#d97706';
+          ctx.beginPath();
+          ctx.moveTo(Math.random() * 512, 0);
+          ctx.bezierCurveTo(Math.random() * 512, 256, Math.random() * 512, 384, Math.random() * 512, 512);
+          ctx.stroke();
+        }
+      } else if (type === 'emerald') {
+        const grad = ctx.createRadialGradient(256, 256, 20, 256, 256, 280);
+        grad.addColorStop(0, '#34d399');
+        grad.addColorStop(0.7, '#059669');
+        grad.addColorStop(1, '#022c22');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, 512, 512);
+      } else if (type === 'gold') {
+        const grad = ctx.createLinearGradient(0, 0, 512, 512);
+        grad.addColorStop(0, '#d97706');
+        grad.addColorStop(0.3, '#fde047');
+        grad.addColorStop(0.6, '#b45309');
+        grad.addColorStop(1, '#fef08a');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, 512, 512);
+      }
+
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.wrapT = THREE.RepeatWrapping;
+      return texture;
+    }
+
+    function selectSkin(skinId) {
+      playFX('click');
+      appState.currentSkin = skinId;
+      document.querySelectorAll('.skin-btn').forEach(btn => {
+        btn.classList.remove('active-skin', 'border-2', 'border-amber-400', 'bg-amber-500/20');
+        btn.classList.add('border-slate-700', 'bg-slate-800');
+      });
+      const activeBtn = document.querySelector(`.skin-btn[data-skin="${skinId}"]`);
+      if (activeBtn) {
+        activeBtn.classList.remove('border-slate-700', 'bg-slate-800');
+        activeBtn.classList.add('active-skin', 'border-2', 'border-amber-400', 'bg-amber-500/20');
+      }
+      const labelMap = {
+        classic: 'Resina Classica',
+        galaxy: 'Galassia Cosmica',
+        magma: 'Magma Vulcano',
+        marble: 'Marmo Imperiale',
+        emerald: 'Smeraldo Elfico',
+        gold: 'Oro Puro',
+        custom: 'Immagine Personale'
+      };
+      const label = document.getElementById('activeSkinLabel');
+      if (label) label.textContent = labelMap[skinId] || 'Personalizzato';
+    }
+
+    function handleCustomSkinUpload(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+          const texture = new THREE.Texture(img);
+          texture.needsUpdate = true;
+          texture.wrapS = THREE.RepeatWrapping;
+          texture.wrapT = THREE.RepeatWrapping;
+          appState.customThreeTexture = texture;
+          appState.customSkinImage = e.target.result;
+
+          const previewBox = document.getElementById('customSkinPreview');
+          if (previewBox) {
+            previewBox.innerHTML = `<img src="${e.target.result}" class="w-full h-full object-cover">`;
+          }
+          const rmBtn = document.getElementById('removeCustomSkinBtn');
+          if (rmBtn) rmBtn.classList.remove('hidden');
+
+          selectSkin('custom');
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function removeCustomSkin() {
+      playFX('click');
+      appState.customSkinImage = null;
+      appState.customThreeTexture = null;
+      const previewBox = document.getElementById('customSkinPreview');
+      if (previewBox) previewBox.innerHTML = '<i class="fa-solid fa-image"></i>';
+      const rmBtn = document.getElementById('removeCustomSkinBtn');
+      if (rmBtn) rmBtn.classList.add('hidden');
+      selectSkin('classic');
+    }
+
+    /* =================================================================
+       GESTIONE TEMI DEL VASSOIO 3D (D&D, FANTASY, MEDIEVALE, STEAMPUNK)
+       ================================================================= */
+    const TRAY_STYLES = ['wood', 'dungeon', 'arcane', 'steampunk', 'felt'];
+    const TRAY_LABELS = {
+      wood: 'Taverna D&D (Legno)',
+      dungeon: 'Cripta D&D (Pietra)',
+      arcane: 'Altare Magico (Fantasy)',
+      steampunk: 'Fonderia (Steampunk)',
+      felt: 'Feltro Verde (Casinò)',
+      random: 'Sempre Diverso (Casuale)'
+    };
+
+    function selectTrayStyle(style) {
+      playFX('click');
+      appState.trayStyle = style;
+
+      document.querySelectorAll('.tray-theme-btn').forEach(b => {
+        b.classList.remove('active-tray', 'border-2', 'border-amber-400', 'bg-amber-500/20');
+        b.classList.add('border-slate-700', 'bg-slate-800');
+        const span = b.querySelector('span.font-bold');
+        if (span) {
+          span.classList.remove('text-white');
+          span.classList.add('text-slate-300');
+        }
+      });
+
+      const activeBtn = document.querySelector(`.tray-theme-btn[data-tray="${style}"]`);
+      if (activeBtn) {
+        activeBtn.classList.remove('border-slate-700', 'bg-slate-800');
+        activeBtn.classList.add('active-tray', 'border-2', 'border-amber-400', 'bg-amber-500/20');
+        const span = activeBtn.querySelector('span.font-bold');
+        if (span) {
+          span.classList.remove('text-slate-300');
+          span.classList.add('text-white');
+        }
+      }
+
+      const label = document.getElementById('activeTrayLabel');
+      if (label) label.textContent = TRAY_LABELS[style] || 'Taverna D&D';
+
+      if (style !== 'random') {
+        applyTrayTheme(style);
+      }
+    }
+
+    function cycleTrayThemeQuickly() {
+      playFX('click');
+      const cur = appState.activeRenderedTrayStyle;
+      const idx = TRAY_STYLES.indexOf(cur);
+      const nextStyle = TRAY_STYLES[(idx + 1) % TRAY_STYLES.length];
+      applyTrayTheme(nextStyle);
+    }
+
+    /* Generazione Texture Procedurali per il Tavolo 3D */
+    function createProceduralTrayFloorTexture(theme) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 1024;
+      canvas.height = 1024;
+      const ctx = canvas.getContext('2d');
+
+      if (theme === 'wood') {
+        // Asse di taverna D&D in quercia antica solcata
+        ctx.fillStyle = '#2c180b';
+        ctx.fillRect(0, 0, 1024, 1024);
+
+        const plankCount = 6;
+        const plankH = 1024 / plankCount;
+        for (let p = 0; p < plankCount; p++) {
+          const y = p * plankH;
+          const shade = ((p % 2 === 0) ? 12 : -12);
+          ctx.fillStyle = `rgb(${44 + shade}, ${24 + Math.floor(shade * 0.6)}, ${11 + Math.floor(shade * 0.3)})`;
+          ctx.fillRect(0, y, 1024, plankH);
+
+          // Fessura tra le tavole
+          ctx.fillStyle = '#0f0703';
+          ctx.fillRect(0, y, 1024, 6);
+
+          // Venature del legno
+          ctx.strokeStyle = 'rgba(15, 7, 3, 0.45)';
+          ctx.lineWidth = 2.5;
+          for (let v = 0; v < 14; v++) {
+            ctx.beginPath();
+            const startY = y + 10 + Math.random() * (plankH - 20);
+            ctx.moveTo(0, startY);
+            ctx.bezierCurveTo(340, startY + (Math.random() - 0.5) * 40, 680, startY + (Math.random() - 0.5) * 40, 1024, startY + (Math.random() - 0.5) * 40);
+            ctx.stroke();
+          }
+
+          // Nodi nel legno
+          if (p % 2 === 0) {
+            const knotX = 220 + p * 110;
+            const knotY = y + plankH / 2;
+            ctx.fillStyle = '#160a04';
+            ctx.beginPath();
+            ctx.ellipse(knotX, knotY, 32, 16, Math.PI / 12, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(74, 40, 18, 0.6)';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+          }
+        }
+      } else if (theme === 'dungeon') {
+        // Lastre di pietra da dungeon medievale con rune scolpite
+        ctx.fillStyle = '#1e2124';
+        ctx.fillRect(0, 0, 1024, 1024);
+
+        // Disegno lastroni di pietra spezzati
+        const rows = 4;
+        const cols = 4;
+        const rH = 1024 / rows;
+        const cW = 1024 / cols;
+
+        for (let r = 0; r < rows; r++) {
+          for (let c = 0; c < cols; c++) {
+            const x = c * cW;
+            const y = r * rH;
+            const jitter = ((r + c) % 2 === 0 ? 10 : -10);
+            ctx.fillStyle = `rgb(${35 + jitter}, ${38 + jitter}, ${42 + jitter})`;
+            ctx.fillRect(x + 4, y + 4, cW - 8, rH - 8);
+
+            // Graffi e crepe da battaglia
+            ctx.strokeStyle = '#0d0e10';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(x + 20, y + 20);
+            ctx.lineTo(x + cW / 2 + (Math.random() - 0.5) * 30, y + rH / 2);
+            ctx.lineTo(x + cW - 25, y + rH - 30);
+            ctx.stroke();
+          }
+        }
+
+        // Fuga tra i blocchi
+        ctx.strokeStyle = '#090a0c';
+        ctx.lineWidth = 8;
+        for (let r = 0; r <= rows; r++) {
+          ctx.beginPath();
+          ctx.moveTo(0, r * rH);
+          ctx.lineTo(1024, r * rH);
+          ctx.stroke();
+        }
+        for (let c = 0; c <= cols; c++) {
+          ctx.beginPath();
+          ctx.moveTo(c * cW, 0);
+          ctx.lineTo(c * cW, 1024);
+          ctx.stroke();
+        }
+
+        // Timbro del drago centrale scolpito
+        ctx.strokeStyle = 'rgba(245, 158, 11, 0.28)';
+        ctx.lineWidth = 6;
+        ctx.beginPath();
+        ctx.arc(512, 512, 280, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(512, 512, 240, 0, Math.PI * 2);
+        ctx.stroke();
+
+      } else if (theme === 'arcane') {
+        // Altare Arcano Fantasy con cerchio di invocazione runico luminescente
+        const bgGrad = ctx.createRadialGradient(512, 512, 50, 512, 512, 600);
+        bgGrad.addColorStop(0, '#1a0b2e');
+        bgGrad.addColorStop(0.5, '#0d0618');
+        bgGrad.addColorStop(1, '#05020a');
+        ctx.fillStyle = bgGrad;
+        ctx.fillRect(0, 0, 1024, 1024);
+
+        // Cerchi concentrici arcani
+        ctx.strokeStyle = '#a855f7';
+        ctx.lineWidth = 5;
+        ctx.beginPath();
+        ctx.arc(512, 512, 380, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.strokeStyle = '#06b6d4';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(512, 512, 340, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.arc(512, 512, 180, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // Stella a 8 punte / sigillo mistico
+        ctx.strokeStyle = 'rgba(217, 70, 239, 0.7)';
+        ctx.lineWidth = 4;
+        for (let i = 0; i < 8; i++) {
+          const a1 = (i * Math.PI * 2) / 8;
+          const a2 = ((i + 3) * Math.PI * 2) / 8;
+          ctx.beginPath();
+          ctx.moveTo(512 + Math.cos(a1) * 340, 512 + Math.sin(a1) * 340);
+          ctx.lineTo(512 + Math.cos(a2) * 340, 512 + Math.sin(a2) * 340);
+          ctx.stroke();
+        }
+
+        // Rune e glifi agli angoli
+        for (let i = 0; i < 16; i++) {
+          const ang = (i * Math.PI * 2) / 16;
+          const rx = 512 + Math.cos(ang) * 260;
+          const ry = 512 + Math.sin(ang) * 260;
+          ctx.fillStyle = i % 2 === 0 ? '#38bdf8' : '#e879f9';
+          ctx.beginPath();
+          ctx.arc(rx, ry, 6, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+      } else if (theme === 'steampunk') {
+        // Piastre metalliche in ottone/rame con rivetti e ingranaggi a vista
+        ctx.fillStyle = '#3a2012';
+        ctx.fillRect(0, 0, 1024, 1024);
+
+        // 4 Grandi piastre di ottone rivettate
+        const pHalf = 512;
+        const plates = [
+          { x: 10, y: 10, w: pHalf - 20, h: pHalf - 20, c: '#5c3619' },
+          { x: pHalf + 10, y: 10, w: pHalf - 20, h: pHalf - 20, c: '#6b3f1d' },
+          { x: 10, y: pHalf + 10, w: pHalf - 20, h: pHalf - 20, c: '#6b3f1d' },
+          { x: pHalf + 10, y: pHalf + 10, w: pHalf - 20, h: pHalf - 20, c: '#5c3619' }
+        ];
+
+        plates.forEach(p => {
+          ctx.fillStyle = p.c;
+          ctx.fillRect(p.x, p.y, p.w, p.h);
+          ctx.strokeStyle = '#b45309';
+          ctx.lineWidth = 4;
+          ctx.strokeRect(p.x, p.y, p.w, p.h);
+
+          // Rivetti lungo i bordi
+          ctx.fillStyle = '#f59e0b';
+          for (let rx = p.x + 20; rx < p.x + p.w; rx += 50) {
+            ctx.beginPath();
+            ctx.arc(rx, p.y + 16, 5, 0, Math.PI * 2);
+            ctx.arc(rx, p.y + p.h - 16, 5, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          for (let ry = p.y + 20; ry < p.y + p.h; ry += 50) {
+            ctx.beginPath();
+            ctx.arc(p.x + 16, ry, 5, 0, Math.PI * 2);
+            ctx.arc(p.x + p.w - 16, ry, 5, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        });
+
+        // Grande ingranaggio centrale in bronzo
+        ctx.save();
+        ctx.translate(512, 512);
+        ctx.fillStyle = '#b45309';
+        ctx.strokeStyle = '#fef08a';
+        ctx.lineWidth = 4;
+        const teeth = 14;
+        const outerR = 190;
+        const innerR = 150;
+        ctx.beginPath();
+        for (let i = 0; i < teeth; i++) {
+          const a1 = (i * Math.PI * 2) / teeth;
+          const a2 = ((i + 0.5) * Math.PI * 2) / teeth;
+          const a3 = ((i + 1) * Math.PI * 2) / teeth;
+          ctx.lineTo(Math.cos(a1) * outerR, Math.sin(a1) * outerR);
+          ctx.lineTo(Math.cos(a2) * outerR, Math.sin(a2) * outerR);
+          ctx.lineTo(Math.cos(a2) * innerR, Math.sin(a2) * innerR);
+          ctx.lineTo(Math.cos(a3) * innerR, Math.sin(a3) * innerR);
+        }
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = '#1c1007';
+        ctx.beginPath();
+        ctx.arc(0, 0, 70, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+
+      } else {
+        // Feltro verde classico
+        ctx.fillStyle = '#0f422e';
+        ctx.fillRect(0, 0, 1024, 1024);
+        for (let i = 0; i < 4000; i++) {
+          ctx.fillStyle = Math.random() > 0.5 ? 'rgba(20, 95, 65, 0.4)' : 'rgba(8, 42, 28, 0.4)';
+          ctx.fillRect(Math.random() * 1024, Math.random() * 1024, 2, 2);
+        }
+      }
+
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.wrapS = THREE.RepeatWrapping;
+      tex.wrapT = THREE.RepeatWrapping;
+      return tex;
+    }
+
+    /* Aggiornamento Dinamico del Vassoio 3D */
+    function applyTrayTheme(theme) {
+      if (!scene || !trayFloorMesh || !trayWalls) return;
+
+      appState.activeRenderedTrayStyle = theme;
+      const quickBadge = document.getElementById('quickTrayName');
+      if (quickBadge) quickBadge.textContent = TRAY_LABELS[theme]?.replace(/\s*\(.*\)/, '') || 'Taverna';
+
+      const floorTex = createProceduralTrayFloorTexture(theme);
+
+      let floorRough = 0.6;
+      let floorMetal = 0.1;
+      let wallColor = 0x381f13;
+      let wallRough = 0.5;
+      let wallMetal = 0.1;
+
+      if (theme === 'wood') {
+        floorRough = 0.72;
+        floorMetal = 0.05;
+        wallColor = 0x241208; // Legno di rovere scuro con venature
+        if (mainSpotLight) mainSpotLight.color.setHex(0xffecc7); // Luce calda da taverna/torce
+        if (trayRimLight) trayRimLight.color.setHex(0xf59e0b);
+      } else if (theme === 'dungeon') {
+        floorRough = 0.88;
+        floorMetal = 0.15;
+        wallColor = 0x1f2327; // Ferro battuto e pietra grigia
+        wallMetal = 0.45;
+        if (mainSpotLight) mainSpotLight.color.setHex(0xe2e8f0); // Luce fredda lunare da cripta
+        if (trayRimLight) trayRimLight.color.setHex(0x38bdf8);
+      } else if (theme === 'arcane') {
+        floorRough = 0.35;
+        floorMetal = 0.3;
+        wallColor = 0x18092e; // Ossidiana incisa di viola
+        wallMetal = 0.6;
+        if (mainSpotLight) mainSpotLight.color.setHex(0xf3e8ff); // Luce mistica ciano/viola
+        if (trayRimLight) trayRimLight.color.setHex(0xa855f7);
+      } else if (theme === 'steampunk') {
+        floorRough = 0.38;
+        floorMetal = 0.75;
+        wallColor = 0x663300; // Bronzo e ottone battuto
+        wallMetal = 0.8;
+        if (mainSpotLight) mainSpotLight.color.setHex(0xffdfba); // Luce calda ad olio / gas
+        if (trayRimLight) trayRimLight.color.setHex(0xf97316);
+      } else {
+        floorRough = 0.9;
+        floorMetal = 0.05;
+        wallColor = 0x381f13;
+        if (mainSpotLight) mainSpotLight.color.setHex(0xfff5e6);
+        if (trayRimLight) trayRimLight.color.setHex(0x6366f1);
+      }
+
+      trayFloorMesh.material.map = floorTex;
+      trayFloorMesh.material.roughness = floorRough;
+      trayFloorMesh.material.metalness = floorMetal;
+      trayFloorMesh.material.needsUpdate = true;
+
+      trayWalls.forEach(w => {
+        w.material.color.setHex(wallColor);
+        w.material.roughness = wallRough;
+        w.material.metalness = wallMetal;
+        w.material.needsUpdate = true;
+      });
+    }
+
+    /* =================================================================
+       MOTORE 3D THREE.JS (Geometrie Esatte, Luci, Vassoio Feltro)
+       ================================================================= */
+    let scene, camera, renderer;
+    let dice3D = [];
+    let isInteracting = false;
+    let mouseLast = { x: 0, y: 0 };
+    let cameraAngle = { theta: 0, phi: 0.9 };
+    const cameraRadius = 16.5;
+
+    let trayFloorMesh = null;
+    let trayWalls = [];
+    let mainSpotLight = null;
+    let trayRimLight = null;
+
+    function initThreeScene() {
+      const container = document.getElementById('diceCanvasContainer');
+      const w = container.clientWidth;
+      const h = container.clientHeight;
+
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x0a0f16);
+      scene.fog = new THREE.FogExp2(0x0a0f16, 0.022);
+
+      camera = new THREE.PerspectiveCamera(42, w / h, 0.1, 100);
+      updateCameraPosition();
+
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(w, h);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+      const existingCanvas = container.querySelector('canvas');
+      if (existingCanvas) existingCanvas.remove();
+      container.insertBefore(renderer.domElement, container.firstChild);
+
+      const ambient = new THREE.AmbientLight(0xffffff, 0.85);
+      scene.add(ambient);
+
+      mainSpotLight = new THREE.DirectionalLight(0xfff5e6, 1.35);
+      mainSpotLight.position.set(10, 22, 12);
+      mainSpotLight.castShadow = true;
+      mainSpotLight.shadow.mapSize.width = 1024;
+      mainSpotLight.shadow.mapSize.height = 1024;
+      scene.add(mainSpotLight);
+
+      trayRimLight = new THREE.PointLight(0x6366f1, 1.1, 30);
+      trayRimLight.position.set(-10, 8, -8);
+      scene.add(trayRimLight);
+
+      buildFeltTray();
+      applyTrayTheme(appState.trayStyle === 'random' ? 'wood' : appState.trayStyle);
+
+      setupControls(container);
+      window.addEventListener('resize', onWindowResize);
+      animateLoop();
+    }
+
+    function buildFeltTray() {
+      trayWalls = [];
+      const trayFloorGeo = new THREE.PlaneGeometry(18, 13);
+      const trayFloorMat = new THREE.MeshStandardMaterial({
+        roughness: 0.88,
+        metalness: 0.05
+      });
+      trayFloorMesh = new THREE.Mesh(trayFloorGeo, trayFloorMat);
+      trayFloorMesh.rotation.x = -Math.PI / 2;
+      trayFloorMesh.receiveShadow = true;
+      scene.add(trayFloorMesh);
+
+      const rimMat = new THREE.MeshStandardMaterial({
+        color: 0x381f13,
+        roughness: 0.45,
+        metalness: 0.1
+      });
+      const wallH = 1.2;
+      const wallT = 0.45;
+
+      const topW = new THREE.Mesh(new THREE.BoxGeometry(18.9, wallH, wallT), rimMat);
+      topW.position.set(0, wallH / 2, -6.65);
+      topW.castShadow = true;
+      scene.add(topW);
+      trayWalls.push(topW);
+
+      const botW = new THREE.Mesh(new THREE.BoxGeometry(18.9, wallH, wallT), rimMat.clone());
+      botW.position.set(0, wallH / 2, 6.65);
+      botW.castShadow = true;
+      scene.add(botW);
+      trayWalls.push(botW);
+
+      const leftW = new THREE.Mesh(new THREE.BoxGeometry(wallT, wallH, 13), rimMat.clone());
+      leftW.position.set(-9.15, wallH / 2, 0);
+      leftW.castShadow = true;
+      scene.add(leftW);
+      trayWalls.push(leftW);
+
+      const rightW = new THREE.Mesh(new THREE.BoxGeometry(wallT, wallH, 13), rimMat.clone());
+      rightW.position.set(9.15, wallH / 2, 0);
+      rightW.castShadow = true;
+      scene.add(rightW);
+      trayWalls.push(rightW);
+    }
+
+    function buildPolyGeometry(sides) {
+      const r = 1.1;
+      let geo;
+      switch (sides) {
+        case 4:
+          geo = new THREE.TetrahedronGeometry(r * 1.3);
+          break;
+        case 6:
+          geo = new THREE.BoxGeometry(r * 1.35, r * 1.35, r * 1.35);
+          break;
+        case 8:
+          geo = new THREE.OctahedronGeometry(r * 1.25);
+          break;
+        case 10:
+          geo = buildD10BufferGeometry(r * 1.18);
+          break;
+        case 12:
+          geo = new THREE.DodecahedronGeometry(r * 1.15);
+          break;
+        case 20:
+          geo = new THREE.IcosahedronGeometry(r * 1.2);
+          break;
+        default:
+          geo = new THREE.BoxGeometry(r * 1.3, r * 1.3, r * 1.3);
+      }
+      applySphericalUVs(geo);
+      return geo;
+    }
+
+    function applySphericalUVs(geometry) {
+      if (!geometry || !geometry.attributes.position) return;
+      const pos = geometry.attributes.position;
+      const uvs = [];
+      const v = new THREE.Vector3();
+      for (let i = 0; i < pos.count; i++) {
+        v.fromBufferAttribute(pos, i).normalize();
+        const u = 0.5 + Math.atan2(v.z, v.x) / (2 * Math.PI);
+        const vCoord = 0.5 - Math.asin(v.y) / Math.PI;
+        uvs.push(u, vCoord);
+      }
+      geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+    }
+
+    function buildD10BufferGeometry(radius) {
+      const geom = new THREE.BufferGeometry();
+      const vertices = [];
+      const h = radius * 1.25;
+      const r = radius * 0.95;
+      const topV = [0, h, 0];
+      const botV = [0, -h, 0];
+      const mid = [];
+
+      for (let i = 0; i < 10; i++) {
+        const theta = (i * Math.PI * 2) / 10;
+        const yOff = (i % 2 === 0 ? 0.38 : -0.38) * radius;
+        mid.push([Math.cos(theta) * r, yOff, Math.sin(theta) * r]);
+      }
+
+      for (let i = 0; i < 10; i++) {
+        const nxt = (i + 1) % 10;
+        vertices.push(...topV, ...mid[i], ...mid[nxt]);
+        vertices.push(...botV, ...mid[nxt], ...mid[i]);
+      }
+
+      geom.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+      geom.computeVertexNormals();
+      return geom;
+    }
+
+    function assembleDieMesh(sides, targetValue, index) {
+      const geom = buildPolyGeometry(sides);
+      const conf = POLYHEDRA[sides] || POLYHEDRA[6];
+      let mat;
+
+      if (appState.currentSkin === 'custom' && appState.customThreeTexture) {
+        mat = new THREE.MeshStandardMaterial({
+          map: appState.customThreeTexture,
+          roughness: 0.35,
+          metalness: 0.1,
+          flatShading: false
+        });
+      } else if (appState.currentSkin !== 'classic') {
+        const texture = createProceduralTexture(appState.currentSkin);
+        mat = new THREE.MeshStandardMaterial({
+          map: texture,
+          roughness: appState.currentSkin === 'gold' ? 0.15 : 0.3,
+          metalness: appState.currentSkin === 'gold' ? 0.75 : 0.15,
+          flatShading: false
+        });
+      } else {
+        mat = new THREE.MeshStandardMaterial({
+          color: conf.colorThree,
+          roughness: 0.22,
+          metalness: 0.18,
+          flatShading: true
+        });
+      }
+
+      const mesh = new THREE.Mesh(geom, mat);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+
+      const wire = new THREE.LineSegments(
+        new THREE.WireframeGeometry(geom),
+        new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.35 })
+      );
+      mesh.add(wire);
+
+      return { mesh, sides, targetValue, index, conf };
+    }
+
+    function updateCameraPosition() {
+      const x = cameraRadius * Math.sin(cameraAngle.phi) * Math.sin(cameraAngle.theta);
+      const y = cameraRadius * Math.cos(cameraAngle.phi);
+      const z = cameraRadius * Math.sin(cameraAngle.phi) * Math.cos(cameraAngle.theta);
+      camera.position.set(x, Math.max(5, y), z);
+      camera.lookAt(0, 0, 0);
+    }
+
+    function setupControls(el) {
+      const onStart = (clientX, clientY) => {
+        isInteracting = true;
+        mouseLast = { x: clientX, y: clientY };
+      };
+
+      const onMove = (clientX, clientY) => {
+        if (!isInteracting) return;
+        const dx = clientX - mouseLast.x;
+        const dy = clientY - mouseLast.y;
+        cameraAngle.theta -= dx * 0.008;
+        cameraAngle.phi = Math.max(0.4, Math.min(1.3, cameraAngle.phi + dy * 0.008));
+        updateCameraPosition();
+        mouseLast = { x: clientX, y: clientY };
+      };
+
+      const onEnd = () => { isInteracting = false; };
+
+      el.addEventListener('mousedown', e => onStart(e.clientX, e.clientY));
+      window.addEventListener('mousemove', e => onMove(e.clientX, e.clientY));
+      window.addEventListener('mouseup', onEnd);
+
+      el.addEventListener('touchstart', e => {
+        if (e.touches.length === 1) onStart(e.touches[0].clientX, e.touches[0].clientY);
+      }, { passive: true });
+
+      window.addEventListener('touchmove', e => {
+        if (isInteracting && e.touches.length === 1) onMove(e.touches[0].clientX, e.touches[0].clientY);
+      }, { passive: true });
+
+      window.addEventListener('touchend', onEnd);
+    }
+
+    function onWindowResize() {
+      const container = document.getElementById('diceCanvasContainer');
+      if (!container || !renderer || !camera) return;
+      const w = container.clientWidth;
+      const h = container.clientHeight;
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h);
+      updateProjectedHtmlBadges();
+    }
+
+    function animateLoop() {
+      requestAnimationFrame(animateLoop);
+      if (!appState.isRolling && dice3D.length > 0) {
+        dice3D.forEach((d, i) => {
+          d.mesh.rotation.y += 0.006 * (i % 2 === 0 ? 1 : -1);
+        });
+      }
+      renderer.render(scene, camera);
+      updateProjectedHtmlBadges();
+    }
+
+    function updateProjectedHtmlBadges() {
+      const container = document.getElementById('diceCanvasContainer');
+      const overlay = document.getElementById('labelsOverlay');
+      if (!container || !overlay || dice3D.length === 0 || appState.isRolling) return;
+
+      const w = container.clientWidth;
+      const h = container.clientHeight;
+
+      dice3D.forEach((item) => {
+        const badgeEl = document.getElementById(`dieBadge_${item.index}`);
+        if (!badgeEl) return;
+        const markerPos = new THREE.Vector3();
+        item.mesh.getWorldPosition(markerPos);
+        markerPos.y += 1.85;
+        markerPos.project(camera);
+
+        if (markerPos.z > 1) {
+          badgeEl.style.opacity = '0';
+          return;
+        }
+
+        const screenX = (markerPos.x * 0.5 + 0.5) * w;
+        const screenY = (-markerPos.y * 0.5 + 0.5) * h;
+        badgeEl.style.left = `${screenX}px`;
+        badgeEl.style.top = `${screenY}px`;
+        badgeEl.style.opacity = '1';
+      });
+    }
+
+    function calculateSpacedPositions(count) {
+      const positions = [];
+      const cols = count <= 3 ? count : count <= 6 ? Math.ceil(count / 2) : Math.ceil(count / 2);
+      const rows = Math.ceil(count / cols);
+
+      const spanX = Math.min(13, cols * 3.2);
+      const spanZ = Math.min(8.5, rows * 3.4);
+
+      const stepX = cols > 1 ? spanX / (cols - 1) : 0;
+      const stepZ = rows > 1 ? spanZ / (rows - 1) : 0;
+
+      const startX = -spanX / 2;
+      const startZ = -spanZ / 2;
+
+      for (let i = 0; i < count; i++) {
+        const c = i % cols;
+        const r = Math.floor(i / cols);
+        const jitterX = (Math.random() - 0.5) * 0.5;
+        const jitterZ = (Math.random() - 0.5) * 0.5;
+        positions.push({
+          x: startX + c * stepX + jitterX,
+          y: 0.95,
+          z: startZ + r * stepZ + jitterZ
+        });
+      }
+      return positions;
+    }
+
+    function triggerRollSequence() {
+      if (appState.isRolling) return;
+      appState.isRolling = true;
+      playFX('roll');
+
+      // Se la modalità tavolo è "Sempre Diverso (Casuale)", pesca un'ambientazione a sorpresa ad ogni lancio!
+      if (appState.trayStyle === 'random') {
+        const otherThemes = TRAY_STYLES.filter(t => t !== appState.activeRenderedTrayStyle);
+        const randomTheme = otherThemes[Math.floor(Math.random() * otherThemes.length)];
+        applyTrayTheme(randomTheme);
+      }
+
+      updateActivePlayerUI();
+      renderMultiplayerScoreboard();
+
+      dice3D.forEach(d => scene.remove(d.mesh));
+      dice3D = [];
+      const overlay = document.getElementById('labelsOverlay');
+      overlay.innerHTML = '';
+
+      const diceList = [];
+      if (appState.mode === 'same') {
+        for (let i = 0; i < appState.diceQty; i++) {
+          diceList.push(appState.commonFaces);
+        }
+      } else {
+        for (let i = 0; i < appState.diceQty; i++) {
+          diceList.push(appState.customList[i] || appState.commonFaces || 6);
+        }
+      }
+
+      const results = diceList.map((sides, idx) => {
+        const val = rollCryptographicDie(sides);
+        return { index: idx, sides, value: val };
+      });
+      appState.currentRolls = results;
+
+      const targetSlots = calculateSpacedPositions(results.length);
+
+      results.forEach((res, i) => {
+        const dieData = assembleDieMesh(res.sides, res.value, i);
+        const mesh = dieData.mesh;
+        const slot = targetSlots[i];
+
+        mesh.position.set(
+          slot.x + (Math.random() * 3 - 1.5),
+          8.5 + Math.random() * 3.5,
+          slot.z - 3 - Math.random() * 2
+        );
+
+        mesh.rotation.set(
+          Math.random() * Math.PI * 4,
+          Math.random() * Math.PI * 4,
+          Math.random() * Math.PI * 4
+        );
+
+        scene.add(mesh);
+
+        const badge = document.createElement('div');
+        badge.id = `dieBadge_${i}`;
+        badge.className = 'die-float-badge opacity-0';
+        badge.innerHTML = `
+          <div class="die-float-pill">
+            <span class="text-[10px] text-amber-400 font-mono">${dieData.conf.name}</span>
+            <span class="text-xl font-fun font-bold leading-none text-white">${res.value}</span>
+          </div>
+          <div class="die-float-pin"></div>
+        `;
+        overlay.appendChild(badge);
+
+        dice3D.push({
+          ...dieData,
+          targetPos: slot,
+          vy: -0.32,
+          rotSpeed: {
+            x: (Math.random() - 0.5) * 0.35,
+            y: (Math.random() - 0.5) * 0.35,
+            z: (Math.random() - 0.5) * 0.35
+          },
+          bounces: 0,
+          settled: false
+        });
+      });
+
+      showArenaScreen();
+
+      const rollStatePill = document.getElementById('rollingStatePill');
+      rollStatePill.className = 'px-3 py-1 rounded-full font-bold uppercase tracking-wider bg-rose-500/20 text-rose-300 border border-rose-500/30 flex items-center gap-2';
+      rollStatePill.innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-400 animate-ping"></span> I dadi stanno rotolando nel vassoio...`;
+
+      document.getElementById('valTotalSum').textContent = '...';
+      document.getElementById('polyhedralResultsGrid').innerHTML = '';
+
+      const startTime = performance.now();
+      const duration = 1350;
+
+      function runPhysics() {
+        const elapsed = performance.now() - startTime;
+        let allResting = true;
+
+        dice3D.forEach((d) => {
+          if (!d.settled) {
+            allResting = false;
+            d.mesh.position.x += (d.targetPos.x - d.mesh.position.x) * 0.085;
+            d.mesh.position.z += (d.targetPos.z - d.mesh.position.z) * 0.085;
+            d.mesh.position.y += d.vy;
+            d.vy -= 0.034;
+
+            if (d.mesh.position.y <= d.targetPos.y) {
+              d.mesh.position.y = d.targetPos.y;
+              d.bounces++;
+              if (d.bounces < 3) {
+                d.vy = 0.2 / d.bounces;
+              } else {
+                d.vy = 0;
+                d.settled = true;
+              }
+            }
+
+            d.mesh.rotation.x += d.rotSpeed.x;
+            d.mesh.rotation.y += d.rotSpeed.y;
+            d.mesh.rotation.z += d.rotSpeed.z;
+          } else {
+            d.rotSpeed.x *= 0.85;
+            d.rotSpeed.y *= 0.85;
+            d.rotSpeed.z *= 0.85;
+            d.mesh.rotation.x += d.rotSpeed.x;
+            d.mesh.rotation.y += d.rotSpeed.y;
+            d.mesh.rotation.z += d.rotSpeed.z;
+          }
+        });
+
+        if (elapsed < duration || !allResting) {
+          requestAnimationFrame(runPhysics);
+        } else {
+          concludeRoll(results);
+        }
+      }
+
+      requestAnimationFrame(runPhysics);
+    }
+
+    function concludeRoll(results) {
+      appState.isRolling = false;
+      playFX('settle');
+
+      const total = results.reduce((acc, curr) => acc + curr.value, 0);
+
+      const activeP = appState.players[appState.activePlayerIndex];
+      if (activeP) {
+        activeP.totalScore += total;
+        activeP.lastScore = total;
+        activeP.rollCount++;
+      }
+
+      appState.sessionStats.totalRolls++;
+      appState.sessionStats.totalDice += results.length;
+      appState.sessionStats.totalScore += total;
+
+      const rollStatePill = document.getElementById('rollingStatePill');
+      rollStatePill.className = 'px-3 py-1 rounded-full font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1.5';
+      rollStatePill.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-400"></i> ${activeP ? activeP.name : 'Giocatore'} ha ottenuto ${total}!`;
+
+      document.getElementById('valTotalSum').textContent = total;
+
+      renderMultiplayerScoreboard();
+      updateActivePlayerUI();
+
+      const grid = document.getElementById('polyhedralResultsGrid');
+      grid.innerHTML = '';
+
+      results.forEach((res, i) => {
+        const conf = POLYHEDRA[res.sides] || POLYHEDRA[6];
+        const card = document.createElement('div');
+        card.className = 'result-poly-card p-3.5 rounded-2xl flex flex-col items-center text-center relative overflow-hidden';
+        card.innerHTML = `
+          <div class="absolute -top-3 -right-3 w-10 h-10 rounded-full opacity-20 blur-sm" style="background:${conf.colorHex}"></div>
+          <div class="w-12 h-12 rounded-xl flex items-center justify-center mb-2 bg-slate-900/90 border border-slate-700/60 shadow-inner">
+            ${conf.svg}
+          </div>
+          <div class="text-[11px] font-bold uppercase tracking-wider text-slate-300">Dado ${i + 1}</div>
+          <div class="text-xs font-bold text-amber-400 mb-1">${conf.name}</div>
+          <div class="text-3xl font-fun font-bold text-white leading-tight">
+            ${res.value}
+          </div>
+          <div class="text-[10px] text-slate-400 mt-0.5">su ${res.sides} facce</div>
+        `;
+        grid.appendChild(card);
+      });
+
+      appendHistoryRecord(results, total, activeP ? activeP.name : null);
+      updateProjectedHtmlBadges();
+    }
+
+    function appendHistoryRecord(results, total, playerName) {
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      appState.history.unshift({ time: timeStr, results, total, playerName: playerName || 'Giocatore' });
+      if (appState.history.length > 15) appState.history.pop();
+      renderHistory();
+    }
+
+    function renderHistory() {
+      const box = document.getElementById('historyLog');
+      if (appState.history.length === 0) {
+        box.innerHTML = '<span class="text-slate-600 italic">Nessun lancio precedente in cronologia.</span>';
+        return;
+      }
+      box.innerHTML = appState.history.map(item => {
+        const summary = item.results.map(r => `${POLYHEDRA[r.sides]?.name || 'D' + r.sides}:${r.value}`).join(', ');
+        return `
+          <div class="flex items-center justify-between py-1.5 px-2.5 rounded-lg bg-slate-800/50 border border-slate-800 text-[11px]">
+            <div class="flex items-center gap-2 text-slate-400 truncate">
+              <span class="text-slate-500 font-mono">${item.time}</span>
+              <span class="font-bold text-indigo-300">${item.playerName}:</span>
+              <span class="truncate">[${summary}]</span>
+            </div>
+            <span class="font-bold font-fun text-amber-400 ml-2">Tot: ${item.total}</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function clearHistory() {
+      playFX('click');
+      appState.history = [];
+      renderHistory();
+    }
+
+    function showConfigScreen() {
+      playFX('click');
+      document.getElementById('configPanel').classList.remove('hidden');
+      document.getElementById('arenaPanel').classList.add('hidden');
+      document.getElementById('exitSummaryPanel').classList.add('hidden');
+    }
+
+    function showArenaScreen() {
+      document.getElementById('configPanel').classList.add('hidden');
+      document.getElementById('arenaPanel').classList.remove('hidden');
+      document.getElementById('exitSummaryPanel').classList.add('hidden');
+      updateActivePlayerUI();
+      renderMultiplayerScoreboard();
+      setTimeout(onWindowResize, 60);
+    }
+
+    function promptExitModal() {
+      playFX('click');
+      toggleModal('exitConfirmModal');
+    }
+
+    function executeExit() {
+      toggleModal('exitConfirmModal');
+      playFX('click');
+
+      document.getElementById('exitTotalRolls').textContent = appState.sessionStats.totalRolls;
+      document.getElementById('exitTotalDice').textContent = appState.sessionStats.totalDice;
+      document.getElementById('exitTotalScore').textContent = appState.sessionStats.totalScore;
+
+      const rankedPlayers = [...appState.players].sort((a, b) => b.totalScore - a.totalScore);
+      const leaderboardBox = document.getElementById('exitLeaderboard');
+      leaderboardBox.innerHTML = '';
+
+      rankedPlayers.forEach((p, idx) => {
+        const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`;
+        const row = document.createElement('div');
+        row.className = 'flex items-center justify-between p-3 rounded-2xl bg-slate-900/90 border border-slate-800';
+        row.innerHTML = `
+          <div class="flex items-center gap-3">
+            <span class="text-xl font-bold font-fun text-amber-400 w-7 text-center">${medal}</span>
+            <div class="w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs text-white shadow" style="background:${p.color.bg}">
+              P${p.id + 1}
+            </div>
+            <div>
+              <span class="font-bold text-white text-sm block">${p.name}</span>
+              <span class="text-[10px] text-slate-400">Lanci effettuati: ${p.rollCount}</span>
+            </div>
+          </div>
+          <div class="text-right">
+            <span class="text-xs uppercase font-extrabold text-amber-300 font-fun text-lg">${p.totalScore} pts</span>
+          </div>
+        `;
+        leaderboardBox.appendChild(row);
+      });
+
+      document.getElementById('configPanel').classList.add('hidden');
+      document.getElementById('arenaPanel').classList.add('hidden');
+      document.getElementById('exitSummaryPanel').classList.remove('hidden');
+    }
+
+    function restartApp() {
+      playFX('click');
+      appState.players.forEach(p => {
+        p.totalScore = 0;
+        p.lastScore = 0;
+        p.rollCount = 0;
+      });
+      appState.activePlayerIndex = 0;
+      appState.currentRound = 1;
+      appState.sessionStats = { totalRolls: 0, totalDice: 0, totalScore: 0 };
+      showConfigScreen();
+    }
+
+    function toggleModal(id) {
+      document.getElementById(id).classList.toggle('hidden');
+    }
+
+    function setDiceQty(qty) {
+      qty = parseInt(qty, 10);
+      if (isNaN(qty) || qty < 1) qty = 1;
+      if (qty > 10) qty = 10;
+      appState.diceQty = qty;
+
+      document.getElementById('diceQtyTag').textContent = qty;
+      document.getElementById('diceQtySlider').value = qty;
+
+      while (appState.customList.length < qty) {
+        appState.customList.push(appState.commonFaces);
+      }
+      renderCustomDiceRows();
+    }
+
+    function changeDiceQty(delta) {
+      playFX('click');
+      const target = appState.diceQty + delta;
+      if (target >= 1 && target <= 10) setDiceQty(target);
+    }
+
+    function switchFacesMode(mode) {
+      playFX('click');
+      appState.mode = mode;
+      const sameTab = document.getElementById('modeSameTab');
+      const custTab = document.getElementById('modeCustomTab');
+      const sameWrap = document.getElementById('sameFacesWrap');
+      const custWrap = document.getElementById('customFacesWrap');
+
+      if (mode === 'same') {
+        sameTab.className = 'px-3 py-1.5 rounded-lg bg-indigo-600 text-white font-semibold transition';
+        custTab.className = 'px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition';
+        sameWrap.classList.remove('hidden');
+        custWrap.classList.add('hidden');
+      } else {
+        custTab.className = 'px-3 py-1.5 rounded-lg bg-indigo-600 text-white font-semibold transition';
+        sameTab.className = 'px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition';
+        custWrap.classList.remove('hidden');
+        sameWrap.classList.add('hidden');
+        renderCustomDiceRows();
+      }
+    }
+
+    function setCommonFaces(sides) {
+      playFX('click');
+      appState.commonFaces = sides;
+
+      document.querySelectorAll('.preset-tile').forEach(tile => {
+        tile.classList.remove('active-preset', 'border-2', 'border-amber-400', 'bg-amber-500/20');
+        tile.classList.add('border-slate-700', 'bg-slate-800/90');
+      });
+
+      const active = document.querySelector(`.preset-tile[data-sides="${sides}"]`);
+      if (active) {
+        active.classList.remove('border-slate-700', 'bg-slate-800/90');
+        active.classList.add('active-preset', 'border-2', 'border-amber-400', 'bg-amber-500/20');
+      }
+    }
+
+    function renderCustomDiceRows() {
+      const container = document.getElementById('individualDiceRows');
+      if (!container) return;
+      container.innerHTML = '';
+
+      for (let i = 0; i < appState.diceQty; i++) {
+        const sides = appState.customList[i] || appState.commonFaces || 6;
+        const row = document.createElement('div');
+        row.className = 'flex items-center justify-between p-2.5 rounded-xl bg-slate-800/70 border border-slate-700/80 text-xs';
+        row.innerHTML = `
+          <span class="font-semibold text-slate-200 flex items-center gap-2">
+            <span class="w-6 h-6 rounded-lg bg-indigo-500/30 text-indigo-300 flex items-center justify-center font-bold font-fun">${i + 1}</span>
+            Dado ${i + 1}
+          </span>
+          <div class="flex items-center gap-2">
+            <span class="text-slate-400">Tipo dado:</span>
+            <select onchange="updateCustomDieSides(${i}, this.value)" class="bg-slate-900 border border-slate-600 rounded-lg px-2.5 py-1 text-white font-medium focus:outline-none focus:border-amber-400">
+              <option value="4" ${sides === 4 ? 'selected' : ''}>D4</option>
+              <option value="6" ${sides === 6 ? 'selected' : ''}>D6</option>
+              <option value="8" ${sides === 8 ? 'selected' : ''}>D8</option>
+              <option value="10" ${sides === 10 ? 'selected' : ''}>D10</option>
+              <option value="12" ${sides === 12 ? 'selected' : ''}>D12</option>
+              <option value="20" ${sides === 20 ? 'selected' : ''}>D20</option>
+            </select>
+          </div>
+        `;
+        container.appendChild(row);
+      }
+    }
+
+    function updateCustomDieSides(index, val) {
+      appState.customList[index] = parseInt(val, 10);
+    }
+
+    /* PWA & Service Worker Support */
+    let deferredPrompt = null;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      const installBtn = document.getElementById('pwaInstallBtn');
+      if (installBtn) {
+        installBtn.classList.remove('hidden');
+        installBtn.classList.add('flex');
+      }
+    });
+
+    function installPWA() {
+      if (!deferredPrompt) return;
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then((choiceResult) => {
+        if (choiceResult.outcome === 'accepted') {
+          const installBtn = document.getElementById('pwaInstallBtn');
+          if (installBtn) installBtn.classList.add('hidden');
+        }
+        deferredPrompt = null;
+      });
+    }
+
+    if ('serviceWorker' in navigator) {
+      const swCode = `
+        const CACHE_NAME = 'nerdice-cache-v3';
+        self.addEventListener('install', (e) => { self.skipWaiting(); });
+        self.addEventListener('activate', (e) => { e.waitUntil(clients.claim()); });
+        self.addEventListener('fetch', (e) => {
+          e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
+        });
+      `;
+      const blob = new Blob([swCode], { type: 'application/javascript' });
+      const swUrl = URL.createObjectURL(blob);
+      navigator.serviceWorker.register(swUrl).catch(() => {});
+    }
+
+    /* Window Load Init */
+    window.onload = function () {
+      initThreeScene();
+      setPlayerCount(1);
+      setDiceQty(2);
+      setCommonFaces(6);
+      renderPlayerConfigInputs();
+      renderMultiplayerScoreboard();
+    };
+  </script>
+</body>
+</html>
