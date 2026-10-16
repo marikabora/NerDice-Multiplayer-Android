@@ -108,10 +108,29 @@
 </head>
 <body class="flex flex-col justify-between min-h-screen p-3 sm:p-5">
 
-  <!-- Elemento Audio HTML5 nativo con link raw al file MP3 su GitHub -->
-  <audio id="bgThemeAudio" loop preload="auto" src="https://raw.githubusercontent.com/marikabora/NerDice-Multiplayer-Android/main/Flagons_Raised_at_Midnight.mp3"></audio>
+  <!-- Elementi Audio: priorità al file locale (.mp3 nella stessa cartella) con fallback su GitHub -->
+  <audio id="bgThemeAudio" loop preload="auto">
+    <source src="./Flagons_Raised_at_Midnight.mp3" type="audio/mpeg">
+    <source src="https://raw.githubusercontent.com/marikabora/NerDice-Multiplayer-Android/main/Flagons_Raised_at_Midnight.mp3" type="audio/mpeg">
+  </audio>
+
   <!-- Musica specifica per il tavolo Taverna: Round of Mead and Iron Dice -->
-  <audio id="tavernThemeAudio" loop preload="auto" src="https://raw.githubusercontent.com/marikabora/NerDice-Multiplayer-Android/main/Round_of_Mead_and_Iron_Dice.mp3"></audio>
+  <audio id="tavernThemeAudio" loop preload="auto">
+    <source src="./Round_of_Mead_and_Iron_Dice.mp3" type="audio/mpeg">
+    <source src="https://raw.githubusercontent.com/marikabora/NerDice-Multiplayer-Android/main/Round_of_Mead_and_Iron_Dice.mp3" type="audio/mpeg">
+  </audio>
+
+  <!-- Musica specifica per il tavolo Cripta: Echoes of the Forgotten Tomb -->
+  <audio id="cryptThemeAudio" loop preload="auto">
+    <source src="./Echoes_of_the_Forgotten_Tomb.mp3" type="audio/mpeg">
+    <source src="https://raw.githubusercontent.com/marikabora/NerDice-Multiplayer-Android/main/Echoes_of_the_Forgotten_Tomb.mp3" type="audio/mpeg">
+  </audio>
+
+  <!-- Musica specifica per il tavolo Altare: Under the Cold Stone -->
+  <audio id="altarThemeAudio" loop preload="auto">
+    <source src="./Under_the_Cold_Stone.mp3" type="audio/mpeg">
+    <source src="https://raw.githubusercontent.com/marikabora/NerDice-Multiplayer-Android/main/Under_the_Cold_Stone.mp3" type="audio/mpeg">
+  </audio>
 
   <header class="w-full max-w-5xl mx-auto flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-800/80 mb-3 sm:mb-5">
     <div class="flex items-center space-x-3">
@@ -579,19 +598,25 @@
     /* ---- GESTIONE BRANO MUSICALE INTEGRO E TRACCE DEI TAVOLI ---- */
     let bgAudioEl = null;
     let tavernAudioEl = null;
+    let cryptAudioEl = null;
+    let altarAudioEl = null;
 
     function initThemeMusicPlayer() {
       bgAudioEl = document.getElementById('bgThemeAudio');
       tavernAudioEl = document.getElementById('tavernThemeAudio');
+      cryptAudioEl = document.getElementById('cryptThemeAudio');
+      altarAudioEl = document.getElementById('altarThemeAudio');
 
       if (bgAudioEl) bgAudioEl.volume = 0.15; // Volume leggero per l'intro
       if (tavernAudioEl) tavernAudioEl.volume = 0.18; // Volume per il tema Taverna
+      if (cryptAudioEl) cryptAudioEl.volume = 0.18; // Volume per il tema Cripta
+      if (altarAudioEl) altarAudioEl.volume = 0.18; // Volume per il tema Altare
     }
 
     function startThemeMusic() {
       if (!appState.music || !bgAudioEl) return;
       // Assicura che nessun'altra traccia sia in esecuzione
-      stopTavernMusic();
+      stopAllTableMusic();
       bgAudioEl.play().catch(e => {
         console.log('Autoplay intro in attesa di interazione:', e);
       });
@@ -605,8 +630,9 @@
 
     function startTavernMusic() {
       if (!appState.music || !tavernAudioEl) return;
-      // Stoppa la musica iniziale
       stopThemeMusic();
+      stopCryptMusic();
+      stopAltarMusic();
       tavernAudioEl.play().catch(e => {
         console.log('Autoplay taverna in attesa di interazione:', e);
       });
@@ -616,6 +642,44 @@
       if (tavernAudioEl) {
         tavernAudioEl.pause();
       }
+    }
+
+    function startCryptMusic() {
+      if (!appState.music || !cryptAudioEl) return;
+      stopThemeMusic();
+      stopTavernMusic();
+      stopAltarMusic();
+      cryptAudioEl.play().catch(e => {
+        console.log('Autoplay cripta in attesa di interazione:', e);
+      });
+    }
+
+    function stopCryptMusic() {
+      if (cryptAudioEl) {
+        cryptAudioEl.pause();
+      }
+    }
+
+    function startAltarMusic() {
+      if (!appState.music || !altarAudioEl) return;
+      stopThemeMusic();
+      stopTavernMusic();
+      stopCryptMusic();
+      altarAudioEl.play().catch(e => {
+        console.log('Autoplay altare in attesa di interazione:', e);
+      });
+    }
+
+    function stopAltarMusic() {
+      if (altarAudioEl) {
+        altarAudioEl.pause();
+      }
+    }
+
+    function stopAllTableMusic() {
+      stopTavernMusic();
+      stopCryptMusic();
+      stopAltarMusic();
     }
 
     function toggleThemeMusic() {
@@ -629,16 +693,22 @@
 
         // Ripristina la musica appropriata alla schermata attuale
         const isArenaVisible = !document.getElementById('arenaPanel').classList.contains('hidden');
-        if (isArenaVisible && appState.activeTable === 'tavern') {
-          startTavernMusic();
-        } else if (!isArenaVisible) {
+        if (isArenaVisible) {
+          if (appState.activeTable === 'tavern') {
+            startTavernMusic();
+          } else if (appState.activeTable === 'crypt') {
+            startCryptMusic();
+          } else if (appState.activeTable === 'altar') {
+            startAltarMusic();
+          }
+        } else {
           startThemeMusic();
         }
       } else {
         if (icon) icon.className = 'fa-solid fa-music-slash text-slate-500';
         if (text) text.textContent = 'Musica OFF';
         stopThemeMusic();
-        stopTavernMusic();
+        stopAllTableMusic();
       }
     }
 
@@ -1433,71 +1503,220 @@
       cv.height = 1024;
       const ctx = cv.getContext('2d');
 
-      // Superficie metallica bronzo/rame brunito
-      const metGrad = ctx.createLinearGradient(0, 0, 1024, 1024);
-      metGrad.addColorStop(0, '#4a2c16');
-      metGrad.addColorStop(0.5, '#6c3e1e');
-      metGrad.addColorStop(1, '#3b2210');
+      // 1. Base piastre di rame brunito e acciaio ossidato industriale
+      const metGrad = ctx.createRadialGradient(512, 512, 80, 512, 512, 680);
+      metGrad.addColorStop(0, '#5a3418');
+      metGrad.addColorStop(0.45, '#3e2312');
+      metGrad.addColorStop(0.85, '#22130a');
+      metGrad.addColorStop(1, '#150b06');
       ctx.fillStyle = metGrad;
       ctx.fillRect(0, 0, 1024, 1024);
 
-      // Micro-graffi e spazzolatura industriale
-      ctx.strokeStyle = 'rgba(255, 215, 160, 0.08)';
-      ctx.lineWidth = 1;
-      for (let i = 0; i < 1200; i++) {
-        const y = Math.random() * 1024;
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(1024, y + (Math.random() - 0.5) * 8);
-        ctx.stroke();
-      }
-
-      // 4 Quadranti / piastre rivettate
-      ctx.strokeStyle = 'rgba(18, 9, 3, 0.9)';
-      ctx.lineWidth = 5;
+      // 2. Fessure termiche con bagliore da fornace a vapore sottostante
+      ctx.shadowColor = '#f97316';
+      ctx.shadowBlur = 18;
+      ctx.strokeStyle = 'rgba(249, 115, 22, 0.45)';
+      ctx.lineWidth = 4;
       ctx.beginPath();
       ctx.moveTo(512, 0); ctx.lineTo(512, 1024);
       ctx.moveTo(0, 512); ctx.lineTo(1024, 512);
       ctx.stroke();
+      ctx.shadowBlur = 0;
 
-      // File di rivetti e bulloni lungo i bordi e assi
-      ctx.fillStyle = '#f59e0b';
-      for (let p = 30; p < 1000; p += 60) {
-        // Asse orizzontale
-        [p].forEach(rx => {
-          ctx.beginPath();
-          ctx.arc(rx, 512, 4.5, 0, Math.PI * 2);
-          ctx.fill();
-        });
-        // Asse verticale
-        [p].forEach(ry => {
-          ctx.beginPath();
-          ctx.arc(512, ry, 4.5, 0, Math.PI * 2);
-          ctx.fill();
-        });
+      // 3. Texture spazzolatura circolare e micro-graffi metallici
+      ctx.lineWidth = 1;
+      for (let i = 0; i < 900; i++) {
+        const y = Math.random() * 1024;
+        const x = Math.random() * 1024;
+        const len = 30 + Math.random() * 80;
+        ctx.strokeStyle = Math.random() > 0.4 ? 'rgba(255, 200, 120, 0.06)' : 'rgba(10, 5, 2, 0.25)';
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x + len, y + (Math.random() - 0.5) * 6);
+        ctx.stroke();
       }
 
-      // Grande schema ingranaggio cesellato al centro
-      const cx = 512;
-      const cy = 512;
-      ctx.strokeStyle = 'rgba(251, 191, 36, 0.4)';
-      ctx.lineWidth = 4;
-      ctx.beginPath();
-      ctx.arc(cx, cy, 260, 0, Math.PI * 2);
-      ctx.stroke();
-
-      // Denti dell'ingranaggio
-      const teeth = 18;
-      for (let t = 0; t < teeth; t++) {
-        const a = (t * Math.PI * 2) / teeth;
-        const tx = cx + Math.cos(a) * 260;
-        const ty = cy + Math.sin(a) * 260;
+      // Funzione helper per disegnare ruote dentate / ingranaggi dettagliati
+      function drawDetailedGear(gx, gy, radius, teeth, toothH, colorMain, colorRim, spokes = 6) {
         ctx.save();
-        ctx.translate(tx, ty);
-        ctx.rotate(a);
-        ctx.fillStyle = 'rgba(245, 158, 11, 0.5)';
-        ctx.fillRect(-12, -18, 24, 36);
+        ctx.translate(gx, gy);
+
+        // Corpo esterno dentato
+        ctx.fillStyle = colorMain;
+        ctx.strokeStyle = colorRim;
+        ctx.lineWidth = 3;
+
+        ctx.beginPath();
+        const step = (Math.PI * 2) / teeth;
+        for (let i = 0; i < teeth; i++) {
+          const a = i * step;
+          const aMid1 = a + step * 0.22;
+          const aMid2 = a + step * 0.48;
+          const aEnd = a + step * 0.70;
+
+          const rIn = radius;
+          const rOut = radius + toothH;
+
+          ctx.lineTo(Math.cos(a) * rIn, Math.sin(a) * rIn);
+          ctx.lineTo(Math.cos(aMid1) * rOut, Math.sin(aMid1) * rOut);
+          ctx.lineTo(Math.cos(aMid2) * rOut, Math.sin(aMid2) * rOut);
+          ctx.lineTo(Math.cos(aEnd) * rIn, Math.sin(aEnd) * rIn);
+        }
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // Incavo cerchio interno
+        ctx.fillStyle = '#1c1008';
+        ctx.beginPath();
+        ctx.arc(0, 0, radius * 0.76, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // Raggi / finestre aperte dell'ingranaggio
+        ctx.fillStyle = colorMain;
+        for (let s = 0; s < spokes; s++) {
+          const sa = (s * Math.PI * 2) / spokes;
+          ctx.save();
+          ctx.rotate(sa);
+          ctx.fillRect(-radius * 0.08, 0, radius * 0.16, radius * 0.76);
+          ctx.restore();
+        }
+
+        // Mozzo centrale con perno e rivetto d'ottone
+        ctx.beginPath();
+        ctx.arc(0, 0, radius * 0.32, 0, Math.PI * 2);
+        ctx.fillStyle = '#b45309';
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.arc(0, 0, radius * 0.14, 0, Math.PI * 2);
+        ctx.fillStyle = '#fef08a';
+        ctx.fill();
+
         ctx.restore();
+      }
+
+      // 4. Meccanismo a ingranaggi multipli incastrati stile Steampunk
+      // Ingranaggio Primario Centrale in Ottone
+      drawDetailedGear(512, 512, 210, 22, 26, '#9a6728', '#fef08a', 8);
+      // Ingranaggio Secondario Superiore Sinistro in Rame
+      drawDetailedGear(270, 270, 130, 16, 20, '#b45309', '#fde047', 6);
+      // Ingranaggio Destro Bronzo
+      drawDetailedGear(760, 480, 115, 14, 18, '#784618', '#f59e0b', 5);
+      // Ingranaggio Inferiore Sinistro in Ferro brunito
+      drawDetailedGear(310, 750, 105, 14, 16, '#52341b', '#d97706', 4);
+
+      // 5. Manometri a lancetta di pressione a vapore (angoli in alto a destra e in basso a destra)
+      function drawSteamGauge(mx, my, rad, label) {
+        ctx.save();
+        ctx.translate(mx, my);
+
+        // Ghiera d'ottone
+        ctx.beginPath();
+        ctx.arc(0, 0, rad, 0, Math.PI * 2);
+        ctx.fillStyle = '#b45309';
+        ctx.fill();
+        ctx.strokeStyle = '#fef08a';
+        ctx.lineWidth = 4;
+        ctx.stroke();
+
+        // Quadrante smaltato avorio invecchiato
+        ctx.beginPath();
+        ctx.arc(0, 0, rad * 0.82, 0, Math.PI * 2);
+        ctx.fillStyle = '#ecdcb9';
+        ctx.fill();
+        ctx.strokeStyle = '#78350f';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Tacche graduate
+        ctx.strokeStyle = '#3e2312';
+        ctx.lineWidth = 2;
+        for (let a = -Math.PI * 0.75; a <= Math.PI * 0.75; a += Math.PI * 0.15) {
+          const x1 = Math.cos(a) * (rad * 0.62);
+          const y1 = Math.sin(a) * (rad * 0.62);
+          const x2 = Math.cos(a) * (rad * 0.76);
+          const y2 = Math.sin(a) * (rad * 0.76);
+          ctx.beginPath();
+          ctx.moveTo(x1, y1);
+          ctx.lineTo(x2, y2);
+          ctx.stroke();
+        }
+
+        // Settore rosso di pericolo sovrapressione
+        ctx.strokeStyle = '#dc2626';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.arc(0, 0, rad * 0.68, Math.PI * 0.35, Math.PI * 0.75);
+        ctx.stroke();
+
+        // Testo indicatore (PSI / BAR)
+        ctx.fillStyle = '#78350f';
+        ctx.font = `bold ${Math.floor(rad * 0.22)}px "Cinzel", serif`;
+        ctx.textAlign = 'center';
+        ctx.fillText(label, 0, rad * 0.42);
+
+        // Lancetta indicatrice in rame
+        ctx.strokeStyle = '#b91c1c';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(Math.cos(Math.PI * 0.25) * (rad * 0.68), Math.sin(Math.PI * 0.25) * (rad * 0.68));
+        ctx.stroke();
+
+        // Bottone centrale
+        ctx.beginPath();
+        ctx.arc(0, 0, rad * 0.12, 0, Math.PI * 2);
+        ctx.fillStyle = '#261408';
+        ctx.fill();
+
+        ctx.restore();
+      }
+
+      drawSteamGauge(820, 200, 78, 'PSI');
+      drawSteamGauge(760, 830, 68, 'BAR');
+
+      // 6. Bulloneria esagonale e rivetti metallici d'ottone su giunzioni e bordi
+      function drawHexBolt(bx, by, size) {
+        ctx.save();
+        ctx.translate(bx, by);
+        ctx.beginPath();
+        for (let i = 0; i < 6; i++) {
+          const a = (i * Math.PI) / 3;
+          const hx = Math.cos(a) * size;
+          const hy = Math.sin(a) * size;
+          if (i === 0) ctx.moveTo(hx, hy);
+          else ctx.lineTo(hx, hy);
+        }
+        ctx.closePath();
+        ctx.fillStyle = '#f59e0b';
+        ctx.fill();
+        ctx.strokeStyle = '#451a03';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        // Taglio vite
+        ctx.strokeStyle = '#78350f';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(-size * 0.5, 0);
+        ctx.lineTo(size * 0.5, 0);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      // Bulloni d'ottone lungo il perimetro delle piastre
+      for (let pos = 40; pos <= 984; pos += 72) {
+        drawHexBolt(pos, 28, 8);
+        drawHexBolt(pos, 996, 8);
+        drawHexBolt(28, pos, 8);
+        drawHexBolt(996, pos, 8);
+        // Bullonatura croce centrale
+        if (pos !== 512) {
+          drawHexBolt(pos, 512, 6.5);
+          drawHexBolt(512, pos, 6.5);
+        }
       }
 
       const tex = new THREE.CanvasTexture(cv);
@@ -1605,15 +1824,15 @@
         rimLightIntensity = 1.4;
       } else if (tableName === 'steampunk') {
         floorTex = createSteampunkFloorTexture();
-        rimColor = 0xb45309; // Bordo ottone caldo
-        roughness = 0.35;
-        metalness = 0.65; // Lamiere metalliche e rame
-        mainLightColor = 0xffedd5;
-        mainLightIntensity = 1.40;
-        ambientColor = 0x451a03;
-        ambientIntensity = 0.85;
-        rimLightColor = 0xf97316; // Fonderia / bagliore metallo caldo
-        rimLightIntensity = 1.25;
+        rimColor = 0x854d0e; // Ottone caldo brunito
+        roughness = 0.28;
+        metalness = 0.85; // Alta metallicità industriale
+        mainLightColor = 0xffe8c8;
+        mainLightIntensity = 1.45;
+        ambientColor = 0x58290e;
+        ambientIntensity = 0.90;
+        rimLightColor = 0xf97316; // Incandescenza calda da fornace/vapore
+        rimLightIntensity = 1.45;
       } else if (tableName === 'felt') {
         floorTex = createFeltFloorTexture();
         rimColor = 0x2b1308; // Mogano lucido da casinò
@@ -1991,8 +2210,8 @@
       document.getElementById('arenaPanel').classList.add('hidden');
 
       // Quando si ritorna alla configurazione/menu iniziale:
-      // Si interrompe la musica del tavolo e si riattiva l'intro
-      stopTavernMusic();
+      // Si interrompono le musiche dei tavoli e si riattiva l'intro
+      stopAllTableMusic();
       if (appState.music) {
         startThemeMusic();
       }
@@ -2005,13 +2224,17 @@
       const arena = document.getElementById('arenaPanel');
       arena.classList.remove('hidden');
 
-      // Se il tavolo scelto è Taverna, ferma l'intro e attiva la musica Taverna
+      // Commutazione audio in base al tavolo prescelto
       if (appState.activeTable === 'tavern') {
         startTavernMusic();
+      } else if (appState.activeTable === 'crypt') {
+        startCryptMusic();
+      } else if (appState.activeTable === 'altar') {
+        startAltarMusic();
       } else {
-        // Sugli altri tavoli ferma sia l'intro che la musica taverna
+        // Sugli altri tavoli ferma sia l'intro che le musiche dei tavoli
         stopThemeMusic();
-        stopTavernMusic();
+        stopAllTableMusic();
       }
 
       // Forza l'aggiornamento immediato delle dimensioni del Canvas per rendere subito visibile il tavolo 3D
