@@ -1,0 +1,43 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch: # Permette di avviare la compilazione a mano con un clic
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Scarica il repository
+        uses: actions/checkout@v4
+
+      - name: Installa Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Installa Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Installa Capacitor
+        run: |
+          npm init -y
+          npm install @capacitor/core @capacitor/cli @capacitor/android
+          npx cap init Nerdice com.marika.nerdice --web-dir .
+          npx cap add android
+          npx cap copy android
+
+      - name: Compila APK con Gradle
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Salva e rendi scaricabile l'APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Nerdice-APK
+          path: android/app/build/outputs/apk/debug/app-debug.apk
