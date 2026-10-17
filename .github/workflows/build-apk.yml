@@ -22,10 +22,11 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Prepara file e Capacitor
+      - name: Prepara cartella www e Capacitor
         run: |
           mkdir -p www
-          cp -r index.html *.mp3 www/ 2>/dev/null || cp index.html www/
+          cp index.html www/
+          cp *.mp3 www/ 2>/dev/null || true
           npm init -y
           npm install @capacitor/core@latest @capacitor/cli@latest @capacitor/android@latest
           npx cap init Nerdice com.marika.nerdice --web-dir www
