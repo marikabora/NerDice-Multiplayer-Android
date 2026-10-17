@@ -14,13 +14,16 @@ jobs:
       - name: Installa Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Installa Java
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '17'
+          java-version: '21'
+
+      - name: Installa Android SDK
+        uses: android-actions/setup-android@v3
 
       - name: Prepara cartella www e Capacitor
         run: |
@@ -28,16 +31,16 @@ jobs:
           cp index.html www/
           cp *.mp3 www/ 2>/dev/null || true
           npm init -y
-          npm install @capacitor/core@latest @capacitor/cli@latest @capacitor/android@latest
-          npx cap init Nerdice com.marika.nerdice --web-dir www
-          npx cap add android
-          npx cap sync android
+          npm install @capacitor/core @capacitor/cli @capacitor/android
+          npx @capacitor/cli init "Nerdice" "com.marika.nerdice" --web-dir "www"
+          npx @capacitor/cli add android
+          npx @capacitor/cli sync android
 
       - name: Compila APK con Gradle
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug --stacktrace
+          ./gradlew assembleDebug --stacktrace --no-daemon
 
       - name: Salva e rendi scaricabile l'APK
         uses: actions/upload-artifact@v4
