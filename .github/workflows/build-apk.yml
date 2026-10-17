@@ -8,41 +8,59 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Scarica il repository
+      - name: Scarica repository
         uses: actions/checkout@v4
 
-      - name: Installa Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
-      - name: Installa Java
+      - name: Configura Java
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '21'
+          java-version: '17'
 
-      - name: Installa Android SDK
-        uses: android-actions/setup-android@v3
+      - name: Configura Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
 
-      - name: Prepara cartella www e Capacitor
+      - name: Prepara ambiente e risorse Web
         run: |
           mkdir -p www
           cp index.html www/
           cp *.mp3 www/ 2>/dev/null || true
-          npm init -y
-          npm install @capacitor/core @capacitor/cli @capacitor/android
-          npx @capacitor/cli init "Nerdice" "com.marika.nerdice" --web-dir "www"
-          npx @capacitor/cli add android
-          npx @capacitor/cli sync android
+          
+          cat << 'EOF' > package.json
+          {
+            "name": "nerdice",
+            "version": "1.0.0",
+            "private": true,
+            "dependencies": {
+              "@capacitor/android": "^6.0.0",
+              "@capacitor/cli": "^6.0.0",
+              "@capacitor/core": "^6.0.0"
+            }
+          }
+          EOF
+
+          cat << 'EOF' > capacitor.config.json
+          {
+            "appId": "com.marika.nerdice",
+            "appName": "Nerdice",
+            "webDir": "www",
+            "bundledWebRuntime": false
+          }
+          EOF
+
+          npm install
+          npx cap add android
+          npx cap sync android
 
       - name: Compila APK con Gradle
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug --stacktrace --no-daemon
+          ./gradlew assembleDebug --no-daemon
 
-      - name: Salva e rendi scaricabile l'APK
+      - name: Carica APK generato
         uses: actions/upload-artifact@v4
         with:
           name: Nerdice-APK
