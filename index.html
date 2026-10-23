@@ -15,7 +15,7 @@
   <!-- Tailwind CSS & FontAwesome -->
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <!-- Three.js r128 -->
+  <!-- Three.js r128 CDN stabile -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
   <style>
@@ -37,17 +37,24 @@
     #diceCanvasContainer {
       position: relative;
       width: 100%;
-      height: 400px;
+      height: 380px;
       border-radius: 1.25rem;
       overflow: hidden;
       background: #060b11;
       box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.9), 0 20px 40px -10px rgba(0, 0, 0, 0.8);
       touch-action: none;
+      transition: height 0.3s ease;
+    }
+
+    @media (min-width: 480px) {
+      #diceCanvasContainer {
+        height: 420px;
+      }
     }
 
     @media (min-width: 768px) {
       #diceCanvasContainer {
-        height: 480px;
+        height: 520px;
       }
     }
 
@@ -64,21 +71,22 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      transition: opacity 0.25s ease;
+      transition: opacity 0.25s ease, transform 0.15s ease-out;
       filter: drop-shadow(0 8px 16px rgba(0,0,0,0.8));
       z-index: 30;
       pointer-events: none;
+      white-space: nowrap;
     }
 
     .die-float-pill {
       background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
       border: 2px solid #f59e0b;
       color: #ffffff;
-      padding: 4px 12px;
+      padding: 3px 10px;
       border-radius: 9999px;
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 5px;
       font-weight: 800;
       box-shadow: 0 0 18px rgba(245, 158, 11, 0.55);
     }
@@ -107,7 +115,7 @@
 </head>
 <body class="flex flex-col justify-between min-h-screen p-3 sm:p-5">
 
-  <!-- Tracce Audio -->
+  <!-- Tracce Audio Tematiche -->
   <audio id="bgThemeAudio" loop preload="auto">
     <source src="./Flagons_Raised_at_Midnight.ogg" type="audio/ogg">
     <source src="https://raw.githubusercontent.com/marikabora/NerDice-Multiplayer-Android/main/Flagons_Raised_at_Midnight.ogg" type="audio/ogg">
@@ -137,6 +145,12 @@
     <source src="https://raw.githubusercontent.com/marikabora/NerDice-Multiplayer-Android/main/bgm_steampunk_dice_clockwork_mystery.ogg" type="audio/ogg">
   </audio>
 
+  <audio id="feltThemeAudio" loop preload="auto">
+    <source src="./Seven_at_the_Table.ogg" type="audio/ogg">
+    <source src="https://raw.githubusercontent.com/marikabora/NerDice-Multiplayer-Android/main/Seven_at_the_Table.ogg" type="audio/ogg">
+    <source src="./Seven_at_the_Table.mp3" type="audio/mpeg">
+  </audio>
+
   <header class="w-full max-w-5xl mx-auto flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-800/80 mb-3 sm:mb-5">
     <div class="flex items-center space-x-3">
       <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-amber-500 via-rose-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-amber-500/25">
@@ -146,7 +160,7 @@
         <h1 class="text-xl sm:text-2xl font-bold font-rpg tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-rose-300 to-indigo-300">
           NERDICE
         </h1>
-        <p class="text-[11px] text-slate-400">Dadi 3D con Numeri Grandi e Visibili su Tutte le Facce</p>
+        <p class="text-[11px] text-slate-400">Inutile programma di lancio dadi per Nerd!</p>
       </div>
     </div>
 
@@ -165,7 +179,6 @@
     <section id="configPanel" class="w-full bg-slate-800/70 backdrop-blur-md rounded-3xl p-4 sm:p-7 border border-slate-700/80 shadow-2xl">
       <div class="text-center mb-5">
         <h2 class="text-2xl sm:text-3xl font-fun font-bold text-white">Configura il Tavolo da Gioco</h2>
-        <p class="text-xs sm:text-sm text-slate-400 mt-1">Numeri ultra-visibili, complanari e ad alto contrasto su tutte le facce.</p>
       </div>
 
       <!-- SELEZIONE GIOCATORI (1 - 8) -->
@@ -189,7 +202,7 @@
       <!-- Scelta Tema Grafico del Vassoio 3D -->
       <div class="mb-5 bg-slate-900/80 rounded-2xl p-4 border border-slate-800">
         <label class="font-medium text-slate-200 flex items-center gap-2 text-xs sm:text-sm mb-3">
-          <i class="fa-solid fa-dungeon text-amber-400"></i> Tema Visivo del Vassoio da Gioco:
+          <i class="fa-solid fa-dungeon text-amber-400"></i> Scegli il tuo tavolo di lancio:
         </label>
         <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs">
           <button type="button" onclick="setTablePreset('tavern')" class="table-opt active-table p-2.5 rounded-xl border-2 border-amber-400 bg-amber-500/20 text-center font-bold text-amber-300" data-table="tavern">
@@ -219,7 +232,7 @@
       <div class="mb-5 bg-slate-900/80 rounded-2xl p-4 border border-slate-800">
         <div class="flex justify-between items-center mb-2.5">
           <label class="font-medium text-slate-200 flex items-center gap-2 text-xs sm:text-sm">
-            <i class="fa-solid fa-gem text-rose-400"></i> Finitura Materiale Solido (100% Opaco):
+            <i class="fa-solid fa-gem text-rose-400"></i> Set di dadi:
           </label>
           <span id="currentSkinBadge" class="text-xs font-bold text-amber-400">BRONZO ANTICO</span>
         </div>
@@ -263,7 +276,7 @@
       <div class="mb-6 bg-slate-900/80 rounded-2xl p-4 border border-slate-800">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
           <label class="font-medium text-slate-200 flex items-center gap-2 text-xs sm:text-sm">
-            <i class="fa-solid fa-shapes text-cyan-400"></i> Poliedro delle Facce:
+            <i class="fa-solid fa-shapes text-cyan-400"></i> Tipo dado:
           </label>
           <div class="flex bg-slate-800 p-1 rounded-xl text-xs">
             <button id="modeSameTab" onclick="switchFacesMode('same')" class="px-2.5 py-1 rounded-lg bg-indigo-600 text-white font-semibold">Tutti Uguali</button>
@@ -601,6 +614,7 @@
     let cryptAudioEl = null;
     let altarAudioEl = null;
     let forgeAudioEl = null;
+    let feltAudioEl = null;
 
     function initThemeMusicPlayer() {
       bgAudioEl = document.getElementById('bgThemeAudio');
@@ -608,16 +622,18 @@
       cryptAudioEl = document.getElementById('cryptThemeAudio');
       altarAudioEl = document.getElementById('altarThemeAudio');
       forgeAudioEl = document.getElementById('forgeThemeAudio');
+      feltAudioEl = document.getElementById('feltThemeAudio');
 
-      if (bgAudioEl) bgAudioEl.volume = 0.20;
+      if (bgAudioEl) bgAudioEl.volume = 0.12;
       if (tavernAudioEl) tavernAudioEl.volume = 0.22;
       if (cryptAudioEl) cryptAudioEl.volume = 0.22;
       if (altarAudioEl) altarAudioEl.volume = 0.22;
       if (forgeAudioEl) forgeAudioEl.volume = 0.22;
+      if (feltAudioEl) feltAudioEl.volume = 0.22;
     }
 
     function stopAllMusic() {
-      [bgAudioEl, tavernAudioEl, cryptAudioEl, altarAudioEl, forgeAudioEl].forEach(a => {
+      [bgAudioEl, tavernAudioEl, cryptAudioEl, altarAudioEl, forgeAudioEl, feltAudioEl].forEach(a => {
         if (a) a.pause();
       });
     }
@@ -639,6 +655,7 @@
         else if (appState.activeTable === 'altar') targetAudio = altarAudioEl;
         else if (appState.activeTable === 'crypt') targetAudio = cryptAudioEl;
         else if (appState.activeTable === 'steampunk') targetAudio = forgeAudioEl;
+        else if (appState.activeTable === 'felt') targetAudio = feltAudioEl;
       }
 
       if (targetAudio) {
@@ -976,59 +993,76 @@
     }
 
     function createD10Geometry(radius) {
-      const h = radius * 1.05;
-      const rEquator = radius * 0.95;
-      const topApex = new THREE.Vector3(0, h, 0);
-      const bottomApex = new THREE.Vector3(0, -h, 0);
+      // Costruzione geometrica perfetta di un solido chiuso: Trapezoedro Pentagonale a 10 facce aquilone (kite)
+      // Ogni faccia aquilone è composta da due triangoli uniti lungo la diagonale, condividendo perfettamente i vertici
+      const hApex = radius * 1.30;
+      const rEquator = radius * 1.10;
+      const hEquator = radius * 0.28;
 
-      const eqVertices = [];
-      for (let i = 0; i < 10; i++) {
-        const angle = (i * Math.PI) / 5;
-        const yOffset = (i % 2 === 0 ? 1 : -1) * (radius * 0.18);
-        eqVertices.push(new THREE.Vector3(
-          rEquator * Math.cos(angle),
-          yOffset,
-          rEquator * Math.sin(angle)
+      const topApex = new THREE.Vector3(0, hApex, 0);
+      const bottomApex = new THREE.Vector3(0, -hApex, 0);
+
+      const upperEquator = [];
+      const lowerEquator = [];
+
+      for (let i = 0; i < 5; i++) {
+        const angleUp = (i * 2 * Math.PI) / 5;
+        upperEquator.push(new THREE.Vector3(
+          rEquator * Math.cos(angleUp),
+          hEquator,
+          rEquator * Math.sin(angleUp)
+        ));
+
+        const angleLow = angleUp + Math.PI / 5;
+        lowerEquator.push(new THREE.Vector3(
+          rEquator * Math.cos(angleLow),
+          -hEquator,
+          rEquator * Math.sin(angleLow)
         ));
       }
 
-      const geom = new THREE.BufferGeometry();
-      const posArray = [];
+      const positions = [];
 
-      for (let i = 0; i < 10; i++) {
-        const next = (i + 1) % 10;
-        const prev = (i + 9) % 10;
+      // Generazione delle 5 facce superiori (aquiloni formati da TopApex, Upper[i], Lower[i], Upper[(i+4)%5])
+      for (let i = 0; i < 5; i++) {
+        const nextLow = i;
+        const prevLow = (i + 4) % 5;
+        const curUp = upperEquator[i];
+        const nextUp = upperEquator[(i + 1) % 5];
+        const midLow = lowerEquator[i];
 
-        if (i % 2 === 0) {
-          const vTop = topApex;
-          const vLeft = eqVertices[prev];
-          const vMid = eqVertices[i];
-          const vRight = eqVertices[next];
+        // Faccia superiore i: aquilone tra Top, curUp, midLow, nextUp
+        // Triangolo 1: Top, curUp, midLow
+        positions.push(topApex.x, topApex.y, topApex.z);
+        positions.push(curUp.x, curUp.y, curUp.z);
+        positions.push(midLow.x, midLow.y, midLow.z);
 
-          posArray.push(vTop.x, vTop.y, vTop.z);
-          posArray.push(vLeft.x, vLeft.y, vLeft.z);
-          posArray.push(vMid.x, vMid.y, vMid.z);
-
-          posArray.push(vTop.x, vTop.y, vTop.z);
-          posArray.push(vMid.x, vMid.y, vMid.z);
-          posArray.push(vRight.x, vRight.y, vRight.z);
-        } else {
-          const vBot = bottomApex;
-          const vLeft = eqVertices[next];
-          const vMid = eqVertices[i];
-          const vRight = eqVertices[prev];
-
-          posArray.push(vBot.x, vBot.y, vBot.z);
-          posArray.push(vLeft.x, vLeft.y, vLeft.z);
-          posArray.push(vMid.x, vMid.y, vMid.z);
-
-          posArray.push(vBot.x, vBot.y, vBot.z);
-          posArray.push(vMid.x, vMid.y, vMid.z);
-          posArray.push(vRight.x, vRight.y, vRight.z);
-        }
+        // Triangolo 2: Top, midLow, nextUp
+        positions.push(topApex.x, topApex.y, topApex.z);
+        positions.push(midLow.x, midLow.y, midLow.z);
+        positions.push(nextUp.x, nextUp.y, nextUp.z);
       }
 
-      geom.setAttribute('position', new THREE.Float32BufferAttribute(posArray, 3));
+      // Generazione delle 5 facce inferiori (aquiloni formati da BottomApex, Lower[i], Upper[(i+1)%5], Lower[(i+1)%5])
+      for (let i = 0; i < 5; i++) {
+        const curLow = lowerEquator[i];
+        const nextLow = lowerEquator[(i + 1) % 5];
+        const midUp = upperEquator[(i + 1) % 5];
+
+        // Faccia inferiore i: aquilone tra Bottom, curLow, midUp, nextLow
+        // Triangolo 1: Bottom, midUp, curLow (ordine per normale esterna corretta)
+        positions.push(bottomApex.x, bottomApex.y, bottomApex.z);
+        positions.push(midUp.x, midUp.y, midUp.z);
+        positions.push(curLow.x, curLow.y, curLow.z);
+
+        // Triangolo 2: Bottom, nextLow, midUp
+        positions.push(bottomApex.x, bottomApex.y, bottomApex.z);
+        positions.push(nextLow.x, nextLow.y, nextLow.z);
+        positions.push(midUp.x, midUp.y, midUp.z);
+      }
+
+      const geom = new THREE.BufferGeometry();
+      geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
       geom.computeVertexNormals();
       return geom;
     }
@@ -1176,7 +1210,8 @@
     let isInteracting = false;
     let mouseLast = { x: 0, y: 0 };
     let cameraAngle = { theta: 0, phi: 0.95 };
-    const cameraRadius = 17.5;
+    let defaultCameraRadius = 18.5;
+    let cameraRadius = 18.5;
 
     function initThreeScene() {
       const container = document.getElementById('diceCanvasContainer');
@@ -1219,6 +1254,31 @@
 
       window.addEventListener('resize', onResize);
       animateLoop();
+    }
+
+    function adaptCameraForDiceCount(count) {
+      // Regola la distanza della camera, il fov e l'altezza del canvas per inquadrare perfettamente sia i dadi che le nuvolette
+      const container = document.getElementById('diceCanvasContainer');
+      const isMobile = window.innerWidth < 768;
+      const isSmallMobile = window.innerWidth < 480;
+
+      if (count > 5) {
+        cameraRadius = defaultCameraRadius + (count - 5) * (isSmallMobile ? 2.1 : 1.6);
+        if (container) container.style.height = isSmallMobile ? '400px' : (isMobile ? '460px' : '580px');
+      } else if (count > 2) {
+        cameraRadius = defaultCameraRadius + (count - 2) * (isSmallMobile ? 1.4 : 1.0);
+        if (container) container.style.height = isSmallMobile ? '380px' : (isMobile ? '430px' : '540px');
+      } else {
+        cameraRadius = defaultCameraRadius + (isSmallMobile ? 1.2 : 0);
+        if (container) container.style.height = isSmallMobile ? '360px' : (isMobile ? '410px' : '500px');
+      }
+
+      if (camera) {
+        camera.fov = isSmallMobile ? (count > 4 ? 48 : 44) : (isMobile ? (count > 4 ? 44 : 40) : (count > 6 ? 42 : 38));
+        camera.updateProjectionMatrix();
+        updateCameraPos();
+      }
+      onResize();
     }
 
     function createTavernFloorTexture() {
@@ -1706,7 +1766,7 @@
 
         const p = new THREE.Vector3();
         d.mesh.getWorldPosition(p);
-        p.y += 2.1;
+        p.y += 2.15; // Quota subito sopra il dado
         p.project(camera);
 
         if (p.z > 1) {
@@ -1714,8 +1774,18 @@
           return;
         }
 
-        const sx = (p.x * 0.5 + 0.5) * w;
-        const sy = (-p.y * 0.5 + 0.5) * h;
+        // Calcolo coordinate schermo
+        let sx = (p.x * 0.5 + 0.5) * w;
+        let sy = (-p.y * 0.5 + 0.5) * h;
+
+        // Limiti (clamping) di sicurezza con margine per evitare tagli a bordo schermo
+        const padX = 38;
+        const padYTop = 45; // Evita che esca in alto
+        const padYBottom = 15;
+
+        sx = Math.max(padX, Math.min(w - padX, sx));
+        sy = Math.max(padYTop, Math.min(h - padYBottom, sy));
+
         badge.style.left = `${sx}px`;
         badge.style.top = `${sy}px`;
         badge.style.opacity = '1';
@@ -1726,6 +1796,7 @@
       if (appState.isRolling) return;
       appState.isRolling = true;
 
+      // 1. Mostra istantaneamente l'arena e adatta la finestra grafica prima di generare la caduta
       showArenaScreen();
 
       dice3D.forEach(d => scene.remove(d.mesh));
@@ -1740,6 +1811,8 @@
         for (let i = 0; i < appState.diceQty; i++) list.push(appState.customList[i] || 20);
       }
 
+      adaptCameraForDiceCount(list.length);
+
       const results = list.map((sides, idx) => ({
         index: idx,
         sides,
@@ -1747,17 +1820,41 @@
       }));
       appState.currentRolls = results;
 
-      const span = Math.min(13, results.length * 3.2);
-      const step = results.length > 1 ? span / (results.length - 1) : 0;
-      const startX = -span / 2;
+      // Distribuzione su 1 o 2 file se ci sono molti dadi (es. 5-10 dadi) per evitare che si sovrappongano o escano dal vassoio
+      const count = results.length;
+      const useDoubleRow = count > 5;
+      const row1Count = useDoubleRow ? Math.ceil(count / 2) : count;
+      const row2Count = count - row1Count;
+
+      const spanRow1 = Math.min(13.5, Math.max(3.0, (row1Count - 1) * 2.85));
+      const stepRow1 = row1Count > 1 ? spanRow1 / (row1Count - 1) : 0;
+      const startXRow1 = -spanRow1 / 2;
+
+      const spanRow2 = Math.min(13.5, Math.max(3.0, (row2Count - 1) * 2.85));
+      const stepRow2 = row2Count > 1 ? spanRow2 / (row2Count - 1) : 0;
+      const startXRow2 = -spanRow2 / 2;
 
       results.forEach((r, i) => {
         const dieData = assembleDieMesh(r.sides, r.value, i);
         const mesh = dieData.mesh;
-        const targetX = startX + i * step + (Math.random() - 0.5) * 0.6;
-        const targetZ = (Math.random() - 0.5) * 4.0;
 
-        mesh.position.set(targetX, 9.5 + Math.random() * 2, targetZ);
+        let targetX, targetZ;
+        if (!useDoubleRow) {
+          targetX = startXRow1 + i * stepRow1 + (Math.random() - 0.5) * 0.4;
+          targetZ = (Math.random() - 0.5) * 2.2;
+        } else {
+          if (i < row1Count) {
+            targetX = startXRow1 + i * stepRow1 + (Math.random() - 0.5) * 0.3;
+            targetZ = -1.8 + (Math.random() - 0.5) * 0.6;
+          } else {
+            const idx2 = i - row1Count;
+            targetX = startXRow2 + idx2 * stepRow2 + (Math.random() - 0.5) * 0.3;
+            targetZ = 2.1 + (Math.random() - 0.5) * 0.6;
+          }
+        }
+
+        // Quota di caduta ben visibile all'interno della camera
+        mesh.position.set(targetX, 10.5 + Math.random() * 2, targetZ);
         mesh.rotation.set(Math.random() * Math.PI * 4, Math.random() * Math.PI * 4, Math.random() * Math.PI * 4);
 
         scene.add(mesh);
@@ -1780,8 +1877,9 @@
         dice3D.push({
           ...dieData,
           targetPos: new THREE.Vector3(targetX, 1.15, targetZ),
+          hoverPos: new THREE.Vector3(targetX, 2.5, targetZ), // Quota ottimizzata per mantenere il badge nello schermo
           targetQuat,
-          vy: -0.34,
+          vy: -0.28,
           rotSpeed: {
             x: (Math.random() - 0.5) * 0.45,
             y: (Math.random() - 0.5) * 0.45,
@@ -1789,7 +1887,9 @@
           },
           bounces: 0,
           settled: false,
-          pitchOffset: 0.92 + (Math.random() * 0.18)
+          pitchOffset: 0.92 + (Math.random() * 0.18),
+          baseY: 2.5,
+          floatPhase: i * 0.55
         });
       });
 
@@ -1805,11 +1905,11 @@
 
       function runPhysics() {
         const elapsed = performance.now() - startTime;
-        let allResting = true;
+        let allSettled = true;
 
         dice3D.forEach((d, idx) => {
           if (!d.settled) {
-            allResting = false;
+            allSettled = false;
             d.mesh.position.x += (d.targetPos.x - d.mesh.position.x) * 0.08;
             d.mesh.position.z += (d.targetPos.z - d.mesh.position.z) * 0.08;
             d.mesh.position.y += d.vy;
@@ -1832,18 +1932,13 @@
                 playSynchronizedResinHit(0.10, d.pitchOffset * 1.15);
                 d.vy = 0;
                 d.settled = true;
-                d.mesh.quaternion.copy(d.targetQuat);
               }
             }
 
             if (!d.settled) {
-              if (d.bounces >= 2) {
-                d.mesh.quaternion.slerp(d.targetQuat, 0.18);
-              } else {
-                d.mesh.rotation.x += d.rotSpeed.x;
-                d.mesh.rotation.y += d.rotSpeed.y;
-                d.mesh.rotation.z += d.rotSpeed.z;
-              }
+              d.mesh.rotation.x += d.rotSpeed.x;
+              d.mesh.rotation.y += d.rotSpeed.y;
+              d.mesh.rotation.z += d.rotSpeed.z;
             }
 
             if (!d.settled && dice3D.length > 1) {
@@ -1859,13 +1954,76 @@
           }
         });
 
-        if (elapsed < 1400 || !allResting) {
+        if (elapsed < 1300 || !allSettled) {
           requestAnimationFrame(runPhysics);
         } else {
-          concludeRoll(results);
+          startHoverShowcase(results);
         }
       }
       requestAnimationFrame(runPhysics);
+    }
+
+    let showcaseAnimId = null;
+
+    function startHoverShowcase(results) {
+      concludeRoll(results);
+
+      const showcaseStart = performance.now();
+      if (showcaseAnimId) cancelAnimationFrame(showcaseAnimId);
+
+      function hoverLoop(time) {
+        if (appState.isRolling) return;
+
+        const timeSec = time * 0.001;
+
+        dice3D.forEach((d) => {
+          // 1. Direzione precisa dal dado verso la telecamera
+          const camDir = new THREE.Vector3().subVectors(camera.position, d.mesh.position).normalize();
+          
+          // 2. Vettore UP della telecamera nel mondo
+          const camUp = new THREE.Vector3(0, 1, 0).applyQuaternion(camera.quaternion).normalize();
+
+          // Costruiamo una base ortonormale locale per la faccia vincente:
+          // d.targetFacetNormal è la normale della faccia vincente nello spazio locale del dado.
+          // Troviamo un vettore 'up' locale sulla faccia per mantenerlo dritto verso l'alto dello schermo.
+          let localUp = new THREE.Vector3(0, 1, 0);
+          if (Math.abs(d.targetFacetNormal.dot(localUp)) > 0.88) {
+            // Se la normale è quasi parallela a Y, usiamo Z come riferimento secondario
+            localUp = new THREE.Vector3(0, 0, 1);
+          }
+          const localRight = new THREE.Vector3().crossVectors(localUp, d.targetFacetNormal).normalize();
+          localUp.crossVectors(d.targetFacetNormal, localRight).normalize();
+
+          // Base desiderata nello spazio mondo:
+          // La normale locale deve puntare verso camDir
+          // Il localUp deve puntare verso camUp (o la sua proiezione perpendicolare a camDir)
+          const worldNormal = camDir.clone();
+          const worldRight = new THREE.Vector3().crossVectors(camUp, worldNormal).normalize();
+          const worldUp = new THREE.Vector3().crossVectors(worldNormal, worldRight).normalize();
+
+          // Matrice di rotazione locale del dado -> Matrice di rotazione mondo desiderata
+          const mLocal = new THREE.Matrix4().makeBasis(localRight, localUp, d.targetFacetNormal);
+          const mWorld = new THREE.Matrix4().makeBasis(worldRight, worldUp, worldNormal);
+
+          // R_mesh * mLocal = mWorld  =>  R_mesh = mWorld * (mLocal)^-1
+          const invLocal = new THREE.Matrix4().copy(mLocal).invert();
+          const targetMatrix = new THREE.Matrix4().multiplyMatrices(mWorld, invLocal);
+          const lookQuat = new THREE.Quaternion().setFromRotationMatrix(targetMatrix);
+
+          // 3. Transizione fluida e naturale verso la quota di galleggiamento
+          const hoverY = d.baseY + Math.sin(timeSec * 2.0 + d.floatPhase) * 0.18;
+          d.mesh.position.y += (hoverY - d.mesh.position.y) * 0.06;
+          d.mesh.position.x += (d.hoverPos.x - d.mesh.position.x) * 0.06;
+          d.mesh.position.z += (d.hoverPos.z - d.mesh.position.z) * 0.06;
+
+          // 4. Rotazione dolce e continua per mantenere la faccia frontale e dritta rispetto agli occhi del giocatore
+          d.mesh.quaternion.slerp(lookQuat, 0.08);
+        });
+
+        showcaseAnimId = requestAnimationFrame(hoverLoop);
+      }
+
+      showcaseAnimId = requestAnimationFrame(hoverLoop);
     }
 
     function concludeRoll(results) {
@@ -1933,10 +2091,15 @@
         renderer.render(scene, camera);
       }
 
+      // Su schermi mobili e Android porta subito in vista l'inizio dell'arena e del vassoio
       requestAnimationFrame(() => {
         onResize();
         if (renderer && scene && camera) {
           renderer.render(scene, camera);
+        }
+        const arenaBox = document.getElementById('arenaPanel');
+        if (arenaBox) {
+          arenaBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
       });
     }
@@ -1948,9 +2111,12 @@
     function setDiceQty(qty) {
       const q = Math.max(1, Math.min(10, parseInt(qty, 10) || 1));
       appState.diceQty = q;
-      document.getElementById('diceQtyTag').textContent = q;
-      document.getElementById('diceQtySlider').value = q;
+      const tag = document.getElementById('diceQtyTag');
+      if (tag) tag.textContent = q;
+      const slider = document.getElementById('diceQtySlider');
+      if (slider) slider.value = q;
       while (appState.customList.length < q) appState.customList.push(appState.commonFaces);
+      if (appState.customList.length > q) appState.customList = appState.customList.slice(0, q);
       renderCustomRows();
     }
 
@@ -2015,22 +2181,31 @@
     }
 
     window.onload = function () {
-      initThreeScene();
-      setPlayerCount(1);
-      setDiceQty(2);
-      setCommonFaces(20);
-      setDiceSkin('bronze');
-      setTablePreset('tavern');
-      initThemeMusicPlayer();
+      function startAppWhenReady() {
+        if (typeof THREE === 'undefined' || !window.THREE) {
+          setTimeout(startAppWhenReady, 50);
+          return;
+        }
 
-      const handleFirstGesture = () => {
-        getAudioContext();
-        playActiveMusic();
-        window.removeEventListener('pointerdown', handleFirstGesture);
-        window.removeEventListener('keydown', handleFirstGesture);
-      };
-      window.addEventListener('pointerdown', handleFirstGesture);
-      window.addEventListener('keydown', handleFirstGesture);
+        initThreeScene();
+        setPlayerCount(1);
+        setDiceQty(2);
+        setCommonFaces(20);
+        setDiceSkin('bronze');
+        setTablePreset('tavern');
+        initThemeMusicPlayer();
+
+        const handleFirstGesture = () => {
+          getAudioContext();
+          playActiveMusic();
+          window.removeEventListener('pointerdown', handleFirstGesture);
+          window.removeEventListener('keydown', handleFirstGesture);
+        };
+        window.addEventListener('pointerdown', handleFirstGesture);
+        window.addEventListener('keydown', handleFirstGesture);
+      }
+
+      startAppWhenReady();
     };
   </script>
 </body>
