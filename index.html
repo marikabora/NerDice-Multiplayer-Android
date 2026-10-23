@@ -3,32 +3,63 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Nerdice - Lancia Dadi Nerd 3D</title>
+  <title>Nerdice - Lancia dadi Nerd</title>
 
-  <!-- PWA / Mobile Meta Tags -->
+  <!-- PWA & Android Meta Tags -->
   <meta name="application-name" content="Nerdice">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Nerdice">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#07090f">
+  <meta name="color-scheme" content="dark">
+
+  <!-- Web App Manifest Inline -->
+  <link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22Nerdice%22%2C%22short_name%22%3A%22Nerdice%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%2307090f%22%2C%22theme_color%22%3A%22%2307090f%22%2C%22orientation%22%3A%22portrait%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22NerDice.png%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fpng%22%2C%22purpose%22%3A%22any%20maskable%22%7D%2C%7B%22src%22%3A%22D20%20Cremisi%20in%20Oro%20Filigranato.png%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fpng%22%2C%22purpose%22%3A%22any%20maskable%22%7D%5D%7D">
+
+  <!-- Icone App Android / iOS / Favicon -->
+  <link rel="icon" type="image/png" href="./NerDice.png">
+  <link rel="icon" type="image/png" href="./D20 Cremisi in Oro Filigranato.png">
+  <link rel="apple-touch-icon" href="./NerDice.png">
+  <link rel="apple-touch-icon" href="./D20 Cremisi in Oro Filigranato.png">
+  <meta property="og:image" content="./NerDice.png">
 
   <!-- Tailwind CSS & FontAwesome -->
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <!-- Three.js r128 CDN stabile -->
+  <!-- Three.js r128 CDN -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700;800;900&family=Fredoka:wght@600;700&family=Inter:wght@400;500;600;700&display=swap');
+
+    :root {
+      --sat: env(safe-area-inset-top, 0px);
+      --sab: env(safe-area-inset-bottom, 0px);
+      --sal: env(safe-area-inset-left, 0px);
+      --sar: env(safe-area-inset-right, 0px);
+    }
+
+    * {
+      box-sizing: border-box;
+      touch-action: manipulation;
+    }
 
     body {
       font-family: 'Inter', sans-serif;
       background: radial-gradient(circle at 50% 20%, #151928 0%, #07090f 100%);
       color: #f1f5f9;
       min-height: 100vh;
+      min-height: 100dvh;
       overflow-x: hidden;
       user-select: none;
+      -webkit-user-select: none;
       -webkit-tap-highlight-color: transparent;
+      padding-top: max(0.75rem, var(--sat));
+      padding-bottom: max(0.75rem, var(--sab));
+      padding-left: max(0.75rem, var(--sal));
+      padding-right: max(0.75rem, var(--sar));
+      overscroll-behavior-y: none;
     }
 
     .font-rpg { font-family: 'Cinzel', serif; }
@@ -46,9 +77,9 @@
       transition: height 0.3s ease;
     }
 
-    @media (min-width: 480px) {
+    @media (max-width: 480px) {
       #diceCanvasContainer {
-        height: 420px;
+        height: 350px;
       }
     }
 
@@ -76,6 +107,7 @@
       z-index: 30;
       pointer-events: none;
       white-space: nowrap;
+      will-change: transform, left, top, opacity;
     }
 
     .die-float-pill {
@@ -101,74 +133,83 @@
       background: linear-gradient(145deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.98) 100%);
       border: 1px solid rgba(255, 255, 255, 0.12);
       box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6);
-      transition: transform 0.2s ease, border-color 0.2s ease;
+      transition: transform 0.15s ease, border-color 0.15s ease;
+      touch-action: manipulation;
     }
-    .result-poly-card:hover {
-      transform: translateY(-2px);
-      border-color: rgba(245, 158, 11, 0.6);
+    .result-poly-card:active {
+      transform: scale(0.97);
     }
 
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    button, input, select, label {
+      min-height: 42px;
+    }
+
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
     ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); }
     ::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.25); border-radius: 999px; }
   </style>
 </head>
-<body class="flex flex-col justify-between min-h-screen p-3 sm:p-5">
+<body class="flex flex-col justify-between min-h-screen">
 
   <!-- Tracce Audio Tematiche -->
-  <audio id="bgThemeAudio" loop preload="auto">
+  <audio id="bgThemeAudio" loop preload="none">
     <source src="./Flagons_Raised_at_Midnight.ogg" type="audio/ogg">
     <source src="https://raw.githubusercontent.com/marikabora/NerDice-Multiplayer-Android/main/Flagons_Raised_at_Midnight.ogg" type="audio/ogg">
     <source src="./Flagons_Raised_at_Midnight.mp3" type="audio/mpeg">
   </audio>
 
-  <audio id="tavernThemeAudio" loop preload="auto">
+  <audio id="tavernThemeAudio" loop preload="none">
     <source src="./Round_of_Mead_and_Iron_Dice.ogg" type="audio/ogg">
     <source src="https://raw.githubusercontent.com/marikabora/NerDice-Multiplayer-Android/main/Round_of_Mead_and_Iron_Dice.ogg" type="audio/ogg">
     <source src="./Round_of_Mead_and_Iron_Dice.mp3" type="audio/mpeg">
   </audio>
 
-  <audio id="cryptThemeAudio" loop preload="auto">
+  <audio id="cryptThemeAudio" loop preload="none">
     <source src="./Echoes_of_the_Forgotten_Tomb.ogg" type="audio/ogg">
     <source src="https://raw.githubusercontent.com/marikabora/NerDice-Multiplayer-Android/main/Echoes_of_the_Forgotten_Tomb.ogg" type="audio/ogg">
     <source src="./Echoes_of_the_Forgotten_Tomb.mp3" type="audio/mpeg">
   </audio>
 
-  <audio id="altarThemeAudio" loop preload="auto">
+  <audio id="altarThemeAudio" loop preload="none">
     <source src="./Under_the_Cold_Stone.ogg" type="audio/ogg">
     <source src="https://raw.githubusercontent.com/marikabora/NerDice-Multiplayer-Android/main/Under_the_Cold_Stone.ogg" type="audio/ogg">
     <source src="./Under_the_Cold_Stone.mp3" type="audio/mpeg">
   </audio>
 
-  <audio id="forgeThemeAudio" loop preload="auto">
+  <audio id="forgeThemeAudio" loop preload="none">
     <source src="./bgm_steampunk_dice_clockwork_mystery.ogg" type="audio/ogg">
     <source src="https://raw.githubusercontent.com/marikabora/NerDice-Multiplayer-Android/main/bgm_steampunk_dice_clockwork_mystery.ogg" type="audio/ogg">
   </audio>
 
-  <audio id="feltThemeAudio" loop preload="auto">
+  <audio id="feltThemeAudio" loop preload="none">
     <source src="./Seven_at_the_Table.ogg" type="audio/ogg">
     <source src="https://raw.githubusercontent.com/marikabora/NerDice-Multiplayer-Android/main/Seven_at_the_Table.ogg" type="audio/ogg">
     <source src="./Seven_at_the_Table.mp3" type="audio/mpeg">
   </audio>
 
-  <header class="w-full max-w-5xl mx-auto flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-800/80 mb-3 sm:mb-5">
-    <div class="flex items-center space-x-3">
-      <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-amber-500 via-rose-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-amber-500/25">
-        <i class="fa-solid fa-dice-d20 text-white text-xl"></i>
+  <header class="w-full max-w-5xl mx-auto flex items-center justify-between gap-2 pb-3 border-b border-slate-800/80 mb-3">
+    <div class="flex items-center space-x-2.5">
+      <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-amber-500 via-rose-500 to-indigo-600 p-[2px] shadow-lg shadow-amber-500/20 shrink-0 overflow-hidden flex items-center justify-center">
+        <img src="./NerDice.png" alt="NerDice Icon" class="w-full h-full object-cover rounded-[14px]" onerror="this.src='./D20 Cremisi in Oro Filigranato.png'; this.onerror=function(){ this.outerHTML='<i class=\'fa-solid fa-dice-d20 text-white text-xl p-2\'></i>'; };">
       </div>
       <div>
-        <h1 class="text-xl sm:text-2xl font-bold font-rpg tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-rose-300 to-indigo-300">
+        <h1 class="text-xl sm:text-2xl font-bold font-rpg tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-rose-300 to-indigo-300 leading-tight">
           NERDICE
         </h1>
-        <p class="text-[11px] text-slate-400">Inutile programma di lancio dadi per Nerd!</p>
+        <p class="text-[10px] sm:text-[11px] text-slate-400">Inutile programma di lancio dadi per Nerd!</p>
       </div>
     </div>
 
-    <!-- Header Controlli: solo Musica ON/OFF -->
-    <div class="flex items-center gap-2">
-      <button id="musicBtn" onclick="toggleThemeMusic()" class="px-3 py-1.5 rounded-xl bg-slate-800/90 border border-slate-700 hover:bg-slate-700 text-slate-300 text-xs flex items-center gap-2 transition" title="Attiva/Disattiva Musica">
+    <!-- Header Controlli Rapidi Android -->
+    <div class="flex items-center gap-1.5">
+      <button id="shakeBtn" onclick="toggleShake()" class="px-2.5 py-1.5 rounded-xl bg-slate-800/90 border border-slate-700 text-slate-300 text-xs flex items-center gap-1.5 active:bg-slate-700 transition" title="Scuoti telefono per lanciare">
+        <i id="shakeIcon" class="fa-solid fa-mobile-screen-button text-amber-400"></i>
+        <span id="shakeBtnText" class="hidden xs:inline">Scuoti ON</span>
+      </button>
+
+      <button id="musicBtn" onclick="toggleThemeMusic()" class="px-2.5 py-1.5 rounded-xl bg-slate-800/90 border border-slate-700 text-slate-300 text-xs flex items-center gap-1.5 active:bg-slate-700 transition" title="Attiva/Disattiva Musica">
         <i id="musicIcon" class="fa-solid fa-music text-indigo-400"></i>
-        <span id="musicBtnText">Musica ON</span>
+        <span id="musicBtnText" class="hidden xs:inline">Musica ON</span>
       </button>
     </div>
   </header>
@@ -176,52 +217,95 @@
   <main class="w-full max-w-5xl mx-auto flex-grow flex flex-col justify-center">
 
     <!-- 1. CONFIGURATORE DADI, GIOCATORI & TAVOLO -->
-    <section id="configPanel" class="w-full bg-slate-800/70 backdrop-blur-md rounded-3xl p-4 sm:p-7 border border-slate-700/80 shadow-2xl">
-      <div class="text-center mb-5">
+    <section id="configPanel" class="w-full bg-slate-800/70 backdrop-blur-md rounded-3xl p-3 sm:p-6 border border-slate-700/80 shadow-2xl">
+      <div class="text-center mb-4">
         <h2 class="text-2xl sm:text-3xl font-fun font-bold text-white">Configura il Tavolo da Gioco</h2>
       </div>
 
       <!-- SELEZIONE GIOCATORI (1 - 8) -->
-      <div class="mb-5 bg-slate-900/80 rounded-2xl p-4 border border-slate-800">
-        <div class="flex justify-between items-center mb-2.5">
+      <div class="mb-4 bg-slate-900/80 rounded-2xl p-3.5 border border-slate-800">
+        <div class="flex justify-between items-center mb-2">
           <label class="font-medium text-slate-200 flex items-center gap-2 text-xs sm:text-sm">
             <i class="fa-solid fa-users text-indigo-400"></i> Quanti giocatori siedono al tavolo?
           </label>
-          <span id="playerQtyTag" class="text-xl font-bold font-fun text-indigo-400 bg-indigo-400/10 px-3.5 py-0.5 rounded-xl border border-indigo-400/30">
+          <span id="playerQtyTag" class="text-base sm:text-lg font-bold font-fun text-indigo-400 bg-indigo-400/10 px-3 py-0.5 rounded-xl border border-indigo-400/30">
             1 Giocatore
           </span>
         </div>
-        <div class="flex items-center space-x-3 mb-3">
-          <button type="button" onclick="changePlayerCount(-1)" class="w-10 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 flex items-center justify-center font-bold text-lg active:scale-95 transition text-indigo-300">-</button>
-          <input type="range" id="playerQtySlider" min="1" max="8" value="1" oninput="setPlayerCount(this.value)" class="w-full accent-indigo-500 h-2 bg-slate-700 rounded-lg cursor-pointer">
-          <button type="button" onclick="changePlayerCount(1)" class="w-10 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 flex items-center justify-center font-bold text-lg active:scale-95 transition text-indigo-300">+</button>
+        <div class="flex items-center space-x-2.5 mb-2.5">
+          <button type="button" onclick="changePlayerCount(-1)" class="w-11 h-11 rounded-xl bg-slate-800 active:bg-slate-700 border border-slate-700 flex items-center justify-center font-bold text-xl active:scale-95 transition text-indigo-300">-</button>
+          <input type="range" id="playerQtySlider" min="1" max="8" value="1" oninput="setPlayerCount(this.value)" class="w-full accent-indigo-500 h-3 bg-slate-700 rounded-lg cursor-pointer">
+          <button type="button" onclick="changePlayerCount(1)" class="w-11 h-11 rounded-xl bg-slate-800 active:bg-slate-700 border border-slate-700 flex items-center justify-center font-bold text-xl active:scale-95 transition text-indigo-300">+</button>
         </div>
-        <div id="playerNamesContainer" class="hidden space-y-2 max-h-40 overflow-y-auto pr-1"></div>
+        <div id="playerNamesContainer" class="space-y-1.5 max-h-40 overflow-y-auto pr-1"></div>
       </div>
 
-      <!-- Scelta Tema Grafico del Vassoio 3D -->
-      <div class="mb-5 bg-slate-900/80 rounded-2xl p-4 border border-slate-800">
-        <label class="font-medium text-slate-200 flex items-center gap-2 text-xs sm:text-sm mb-3">
+      <!-- SEZIONE MODALITÀ SFIDA (Appare solo con 2 o più giocatori) -->
+      <div id="challengeModeCard" class="hidden mb-4 bg-gradient-to-r from-amber-950/40 via-slate-900 to-indigo-950/40 rounded-2xl p-3.5 border border-amber-500/40 shadow-lg">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 mb-2.5">
+          <div class="flex items-center gap-2">
+            <i class="fa-solid fa-trophy text-amber-400 text-base"></i>
+            <div>
+              <span class="font-fun font-bold text-white text-xs sm:text-sm block">Modalità Gioco Multiplayer</span>
+              <span class="text-[10px] text-slate-400">Gara a punti a round</span>
+            </div>
+          </div>
+          <div class="flex bg-slate-900 p-1 rounded-xl border border-slate-700">
+            <button id="modeFreeBtn" type="button" onclick="setGameMode('free')" class="flex-1 py-1.5 px-3 rounded-lg bg-indigo-600 text-white font-bold text-xs transition active:scale-95">Lancio Libero</button>
+            <button id="modeChallengeBtn" type="button" onclick="setGameMode('challenge')" class="flex-1 py-1.5 px-3 rounded-lg text-slate-400 font-medium text-xs transition active:scale-95">🏆 Sfida a Round</button>
+          </div>
+        </div>
+
+        <!-- Configurazione dettagli Sfida a Round -->
+        <div id="challengeDetailsBox" class="hidden pt-2.5 border-t border-slate-800 space-y-2.5">
+          <div class="flex justify-between items-center">
+            <label class="text-xs text-slate-300 font-medium flex items-center gap-1.5">
+              <i class="fa-solid fa-flag-checkered text-amber-400"></i> Durata della sfida in round:
+            </label>
+            <span id="targetRoundsTag" class="text-xs font-bold font-fun text-amber-400 bg-amber-400/10 px-2.5 py-0.5 rounded-lg border border-amber-400/30">
+              3 Round
+            </span>
+          </div>
+
+          <div class="grid grid-cols-4 gap-1.5">
+            <button type="button" onclick="setTargetRounds(1)" data-rounds="1" class="round-preset-btn py-2 rounded-xl bg-slate-800 text-slate-300 active:bg-slate-700 text-xs border border-slate-700 transition">1 Rnd</button>
+            <button type="button" onclick="setTargetRounds(3)" data-rounds="3" class="round-preset-btn py-2 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs shadow transition">3 Rnd</button>
+            <button type="button" onclick="setTargetRounds(5)" data-rounds="5" class="round-preset-btn py-2 rounded-xl bg-slate-800 text-slate-300 active:bg-slate-700 text-xs border border-slate-700 transition">5 Rnd</button>
+            <button type="button" onclick="setTargetRounds(10)" data-rounds="10" class="round-preset-btn py-2 rounded-xl bg-slate-800 text-slate-300 active:bg-slate-700 text-xs border border-slate-700 transition">10 Rnd</button>
+          </div>
+
+          <div class="flex items-center space-x-2 pt-1">
+            <input type="range" id="targetRoundsSlider" min="1" max="15" value="3" oninput="setTargetRounds(this.value)" class="w-full accent-amber-500 h-2 bg-slate-700 rounded-lg cursor-pointer">
+          </div>
+          <p class="text-[10px] text-amber-300/80 italic text-center">
+            I dadi resteranno identici per tutta la sfida per equità di gioco.
+          </p>
+        </div>
+      </div>
+
+      <!-- Scelta Tavolo 3D -->
+      <div class="mb-4 bg-slate-900/80 rounded-2xl p-3.5 border border-slate-800">
+        <label class="font-medium text-slate-200 flex items-center gap-2 text-xs sm:text-sm mb-2.5">
           <i class="fa-solid fa-dungeon text-amber-400"></i> Scegli il tuo tavolo di lancio:
         </label>
-        <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs">
-          <button type="button" onclick="setTablePreset('tavern')" class="table-opt active-table p-2.5 rounded-xl border-2 border-amber-400 bg-amber-500/20 text-center font-bold text-amber-300" data-table="tavern">
+        <div class="grid grid-cols-2 sm:grid-cols-5 gap-1.5 text-xs">
+          <button type="button" onclick="setTablePreset('tavern')" class="table-opt active-table p-2.5 rounded-xl border-2 border-amber-400 bg-amber-500/20 text-center font-bold text-amber-300 active:scale-95 transition" data-table="tavern">
             🍺 Taverna
             <span class="block text-[10px] text-slate-400 font-normal">Legno Antico</span>
           </button>
-          <button type="button" onclick="setTablePreset('crypt')" class="table-opt p-2.5 rounded-xl border border-slate-700 bg-slate-800 text-center font-bold text-slate-300" data-table="crypt">
+          <button type="button" onclick="setTablePreset('crypt')" class="table-opt p-2.5 rounded-xl border border-slate-700 bg-slate-800 text-center font-bold text-slate-300 active:scale-95 transition" data-table="crypt">
             💀 Cripta
             <span class="block text-[10px] text-slate-400 font-normal">Pietra Sotterranea</span>
           </button>
-          <button type="button" onclick="setTablePreset('altar')" class="table-opt p-2.5 rounded-xl border border-slate-700 bg-slate-800 text-center font-bold text-slate-300" data-table="altar">
+          <button type="button" onclick="setTablePreset('altar')" class="table-opt p-2.5 rounded-xl border border-slate-700 bg-slate-800 text-center font-bold text-slate-300 active:scale-95 transition" data-table="altar">
             🔮 Altare
             <span class="block text-[10px] text-slate-400 font-normal">Ossidiana Arcana</span>
           </button>
-          <button type="button" onclick="setTablePreset('steampunk')" class="table-opt p-2.5 rounded-xl border border-slate-700 bg-slate-800 text-center font-bold text-slate-300" data-table="steampunk">
+          <button type="button" onclick="setTablePreset('steampunk')" class="table-opt p-2.5 rounded-xl border border-slate-700 bg-slate-800 text-center font-bold text-slate-300 active:scale-95 transition" data-table="steampunk">
             ⚙️ Fonderia
             <span class="block text-[10px] text-slate-400 font-normal">Ottone & Rame</span>
           </button>
-          <button type="button" onclick="setTablePreset('felt')" class="table-opt p-2.5 rounded-xl border border-slate-700 bg-slate-800 text-center font-bold text-slate-300" data-table="felt">
+          <button type="button" onclick="setTablePreset('felt')" class="table-opt col-span-2 sm:col-span-1 p-2.5 rounded-xl border border-slate-700 bg-slate-800 text-center font-bold text-slate-300 active:scale-95 transition" data-table="felt">
             🎲 Feltro
             <span class="block text-[10px] text-slate-400 font-normal">Verde Classico</span>
           </button>
@@ -229,129 +313,130 @@
       </div>
 
       <!-- Scelta Texture dei Dadi -->
-      <div class="mb-5 bg-slate-900/80 rounded-2xl p-4 border border-slate-800">
-        <div class="flex justify-between items-center mb-2.5">
+      <div class="mb-4 bg-slate-900/80 rounded-2xl p-3.5 border border-slate-800">
+        <div class="flex justify-between items-center mb-2">
           <label class="font-medium text-slate-200 flex items-center gap-2 text-xs sm:text-sm">
             <i class="fa-solid fa-gem text-rose-400"></i> Set di dadi:
           </label>
-          <span id="currentSkinBadge" class="text-xs font-bold text-amber-400">BRONZO ANTICO</span>
+          <span id="currentSkinBadge" class="text-[11px] font-bold text-amber-400">BRONZO ANTICO</span>
         </div>
-        <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2 text-[11px]">
-          <button type="button" onclick="setDiceSkin('bronze')" class="skin-btn active-skin p-2 rounded-xl border-2 border-amber-400 bg-amber-500/20 text-amber-300 text-center font-bold" data-skin="bronze">🛡️ Bronzo Antico</button>
-          <button type="button" onclick="setDiceSkin('classic')" class="skin-btn p-2 rounded-xl border border-slate-700 bg-slate-800 text-slate-200 text-center" data-skin="classic">🌟 Resina Nera</button>
-          <button type="button" onclick="setDiceSkin('gold')" class="skin-btn p-2 rounded-xl border border-slate-700 bg-slate-800 text-slate-200 text-center" data-skin="gold">🪙 Oro Puro 24K</button>
-          <button type="button" onclick="setDiceSkin('marble')" class="skin-btn p-2 rounded-xl border border-slate-700 bg-slate-800 text-slate-200 text-center" data-skin="marble">🏛️ Marmo Imperiale</button>
-          <button type="button" onclick="setDiceSkin('galaxy')" class="skin-btn p-2 rounded-xl border border-slate-700 bg-slate-800 text-slate-200 text-center" data-skin="galaxy">🌌 Galassia Viola</button>
-          <button type="button" onclick="setDiceSkin('magma')" class="skin-btn p-2 rounded-xl border border-slate-700 bg-slate-800 text-slate-200 text-center" data-skin="magma">🌋 Magma Basalto</button>
-          <button type="button" onclick="setDiceSkin('emerald')" class="skin-btn p-2 rounded-xl border border-slate-700 bg-slate-800 text-slate-200 text-center" data-skin="emerald">🌲 Smeraldo Solido</button>
-          <button type="button" onclick="setDiceSkin('bone')" class="skin-btn p-2 rounded-xl border border-slate-700 bg-slate-800 text-slate-200 text-center" data-skin="bone">💀 Avorio & Ossa</button>
-          <button type="button" onclick="setDiceSkin('damascus')" class="skin-btn p-2 rounded-xl border border-slate-700 bg-slate-800 text-slate-200 text-center" data-skin="damascus">⚔️ Acciaio Damasco</button>
-          <button type="button" onclick="setDiceSkin('amethyst')" class="skin-btn p-2 rounded-xl border border-slate-700 bg-slate-800 text-slate-200 text-center" data-skin="amethyst">💎 Ametista Opaca</button>
-          <button type="button" onclick="setDiceSkin('dragon')" class="skin-btn p-2 rounded-xl border border-slate-700 bg-slate-800 text-slate-200 text-center" data-skin="dragon">🐉 Drago Cremisi</button>
-          <label class="skin-btn p-2 rounded-xl border border-dashed border-indigo-500/50 bg-indigo-950/30 text-indigo-300 text-center cursor-pointer hover:border-indigo-400 flex items-center justify-center">
-            <span>🖼️ Immagine...</span>
+        <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-1.5 text-[11px]">
+          <button type="button" onclick="setDiceSkin('bronze')" class="skin-btn active-skin p-2.5 rounded-xl border-2 border-amber-400 bg-amber-500/20 text-amber-300 text-center font-bold active:scale-95 transition" data-skin="bronze">🛡️ Bronzo Antico</button>
+          <button type="button" onclick="setDiceSkin('classic')" class="skin-btn p-2.5 rounded-xl border border-slate-700 bg-slate-800 text-slate-200 text-center active:scale-95 transition" data-skin="classic">🌟 Resina Nera</button>
+          <button type="button" onclick="setDiceSkin('gold')" class="skin-btn p-2.5 rounded-xl border border-slate-700 bg-slate-800 text-slate-200 text-center active:scale-95 transition" data-skin="gold">🪙 Oro Puro 24K</button>
+          <button type="button" onclick="setDiceSkin('obsidian')" class="skin-btn p-2.5 rounded-xl border border-slate-700 bg-slate-800 text-slate-200 text-center active:scale-95 transition" data-skin="obsidian">🔮 Ossidiana</button>
+          <button type="button" onclick="setDiceSkin('ice')" class="skin-btn p-2.5 rounded-xl border border-slate-700 bg-slate-800 text-slate-200 text-center active:scale-95 transition" data-skin="ice">❄️ Ghiaccio</button>
+          <button type="button" onclick="setDiceSkin('bark')" class="skin-btn p-2.5 rounded-xl border border-slate-700 bg-slate-800 text-slate-200 text-center active:scale-95 transition" data-skin="bark">🪵 Corteccia</button>
+          <button type="button" onclick="setDiceSkin('galaxy')" class="skin-btn p-2.5 rounded-xl border border-slate-700 bg-slate-800 text-slate-200 text-center active:scale-95 transition" data-skin="galaxy">🌌 Galassia</button>
+          <button type="button" onclick="setDiceSkin('magma')" class="skin-btn p-2.5 rounded-xl border border-slate-700 bg-slate-800 text-slate-200 text-center active:scale-95 transition" data-skin="magma">🌋 Magma</button>
+          <button type="button" onclick="setDiceSkin('emerald')" class="skin-btn p-2.5 rounded-xl border border-slate-700 bg-slate-800 text-slate-200 text-center active:scale-95 transition" data-skin="emerald">🌲 Smeraldo</button>
+          <button type="button" onclick="setDiceSkin('damascus')" class="skin-btn p-2.5 rounded-xl border border-slate-700 bg-slate-800 text-slate-200 text-center active:scale-95 transition" data-skin="damascus">⚔️ Damasco</button>
+          <button type="button" onclick="setDiceSkin('amethyst')" class="skin-btn p-2.5 rounded-xl border border-slate-700 bg-slate-800 text-slate-200 text-center active:scale-95 transition" data-skin="amethyst">💎 Ametista</button>
+          <button type="button" onclick="setDiceSkin('dragon')" class="skin-btn p-2.5 rounded-xl border border-slate-700 bg-slate-800 text-slate-200 text-center active:scale-95 transition" data-skin="dragon">🐉 Drago</button>
+          <label class="skin-btn col-span-2 sm:col-span-2 p-2.5 rounded-xl border border-dashed border-indigo-500/50 bg-indigo-950/30 text-indigo-300 text-center cursor-pointer active:scale-95 flex items-center justify-center gap-1.5">
+            <span>🖼️ Immagine Personalizzata...</span>
             <input type="file" id="customTextureUpload" accept="image/*" class="hidden" onchange="handleCustomTextureUpload(event)">
           </label>
         </div>
       </div>
 
-      <!-- Selezione Quantità Dadi (1-10) -->
-      <div class="mb-5 bg-slate-900/80 rounded-2xl p-4 border border-slate-800">
-        <div class="flex justify-between items-center mb-2.5">
+      <!-- Quantità Dadi (1-10) -->
+      <div class="mb-4 bg-slate-900/80 rounded-2xl p-3.5 border border-slate-800">
+        <div class="flex justify-between items-center mb-2">
           <label class="font-medium text-slate-200 flex items-center gap-2 text-xs sm:text-sm">
             <i class="fa-solid fa-layer-group text-amber-400"></i> Quanti dadi vuoi lanciare?
           </label>
-          <span id="diceQtyTag" class="text-xl font-bold font-fun text-amber-400 bg-amber-400/10 px-3.5 py-0.5 rounded-xl border border-amber-400/30">
+          <span id="diceQtyTag" class="text-base sm:text-lg font-bold font-fun text-amber-400 bg-amber-400/10 px-3 py-0.5 rounded-xl border border-amber-400/30">
             2
           </span>
         </div>
-        <div class="flex items-center space-x-3">
-          <button type="button" onclick="changeDiceQty(-1)" class="w-10 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 flex items-center justify-center font-bold text-lg active:scale-95 transition">-</button>
-          <input type="range" id="diceQtySlider" min="1" max="10" value="2" oninput="setDiceQty(this.value)" class="w-full accent-amber-500 h-2 bg-slate-700 rounded-lg cursor-pointer">
-          <button type="button" onclick="changeDiceQty(1)" class="w-10 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 flex items-center justify-center font-bold text-lg active:scale-95 transition">+</button>
+        <div class="flex items-center space-x-2.5">
+          <button type="button" onclick="changeDiceQty(-1)" class="w-11 h-11 rounded-xl bg-slate-800 active:bg-slate-700 border border-slate-700 flex items-center justify-center font-bold text-xl active:scale-95 transition text-indigo-300">-</button>
+          <input type="range" id="diceQtySlider" min="1" max="10" value="2" oninput="setDiceQty(this.value)" class="w-full accent-amber-500 h-3 bg-slate-700 rounded-lg cursor-pointer">
+          <button type="button" onclick="changeDiceQty(1)" class="w-11 h-11 rounded-xl bg-slate-800 active:bg-slate-700 border border-slate-700 flex items-center justify-center font-bold text-xl active:scale-95 transition text-indigo-300">+</button>
         </div>
       </div>
 
       <!-- Scelta Facce (D4, D6, D8, D10, D12, D20) -->
-      <div class="mb-6 bg-slate-900/80 rounded-2xl p-4 border border-slate-800">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+      <div class="mb-5 bg-slate-900/80 rounded-2xl p-3.5 border border-slate-800">
+        <div class="flex items-center justify-between gap-2 mb-2.5">
           <label class="font-medium text-slate-200 flex items-center gap-2 text-xs sm:text-sm">
             <i class="fa-solid fa-shapes text-cyan-400"></i> Tipo dado:
           </label>
           <div class="flex bg-slate-800 p-1 rounded-xl text-xs">
-            <button id="modeSameTab" onclick="switchFacesMode('same')" class="px-2.5 py-1 rounded-lg bg-indigo-600 text-white font-semibold">Tutti Uguali</button>
-            <button id="modeCustomTab" onclick="switchFacesMode('custom')" class="px-2.5 py-1 rounded-lg text-slate-400 hover:text-white">Personalizza Singoli</button>
+            <button id="modeSameTab" onclick="switchFacesMode('same')" class="px-2.5 py-1.5 rounded-lg bg-indigo-600 text-white font-semibold active:scale-95 transition">Tutti Uguali</button>
+            <button id="modeCustomTab" onclick="switchFacesMode('custom')" class="px-2.5 py-1.5 rounded-lg text-slate-400 active:scale-95 transition">Personalizza</button>
           </div>
         </div>
 
         <div id="sameFacesWrap">
-          <div class="grid grid-cols-3 sm:grid-cols-6 gap-2">
-            <button type="button" onclick="setCommonFaces(4)" class="preset-tile p-3 rounded-2xl border border-slate-700 bg-slate-800 text-center" data-sides="4">
-              <span class="text-xl font-bold text-amber-400 font-fun block">D4</span>
+          <div class="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
+            <button type="button" onclick="setCommonFaces(4)" class="preset-tile p-2.5 rounded-xl border border-slate-700 bg-slate-800 text-center active:scale-95 transition" data-sides="4">
+              <span class="text-lg sm:text-xl font-bold text-amber-400 font-fun block">D4</span>
               <span class="text-[10px] text-slate-400">4 Facce</span>
             </button>
-            <button type="button" onclick="setCommonFaces(6)" class="preset-tile p-3 rounded-2xl border border-slate-700 bg-slate-800 text-center" data-sides="6">
-              <span class="text-xl font-bold text-rose-400 font-fun block">D6</span>
+            <button type="button" onclick="setCommonFaces(6)" class="preset-tile p-2.5 rounded-xl border border-slate-700 bg-slate-800 text-center active:scale-95 transition" data-sides="6">
+              <span class="text-lg sm:text-xl font-bold text-rose-400 font-fun block">D6</span>
               <span class="text-[10px] text-slate-400">6 Facce</span>
             </button>
-            <button type="button" onclick="setCommonFaces(8)" class="preset-tile p-3 rounded-2xl border border-slate-700 bg-slate-800 text-center" data-sides="8">
-              <span class="text-xl font-bold text-cyan-400 font-fun block">D8</span>
+            <button type="button" onclick="setCommonFaces(8)" class="preset-tile p-2.5 rounded-xl border border-slate-700 bg-slate-800 text-center active:scale-95 transition" data-sides="8">
+              <span class="text-lg sm:text-xl font-bold text-cyan-400 font-fun block">D8</span>
               <span class="text-[10px] text-slate-400">8 Facce</span>
             </button>
-            <button type="button" onclick="setCommonFaces(10)" class="preset-tile p-3 rounded-2xl border border-slate-700 bg-slate-800 text-center" data-sides="10">
-              <span class="text-xl font-bold text-emerald-400 font-fun block">D10</span>
+            <button type="button" onclick="setCommonFaces(10)" class="preset-tile p-2.5 rounded-xl border border-slate-700 bg-slate-800 text-center active:scale-95 transition" data-sides="10">
+              <span class="text-lg sm:text-xl font-bold text-emerald-400 font-fun block">D10</span>
               <span class="text-[10px] text-slate-400">10 Facce</span>
             </button>
-            <button type="button" onclick="setCommonFaces(12)" class="preset-tile p-3 rounded-2xl border border-slate-700 bg-slate-800 text-center" data-sides="12">
-              <span class="text-xl font-bold text-purple-400 font-fun block">D12</span>
+            <button type="button" onclick="setCommonFaces(12)" class="preset-tile p-2.5 rounded-xl border border-slate-700 bg-slate-800 text-center active:scale-95 transition" data-sides="12">
+              <span class="text-lg sm:text-xl font-bold text-purple-400 font-fun block">D12</span>
               <span class="text-[10px] text-slate-400">12 Facce</span>
             </button>
-            <button type="button" onclick="setCommonFaces(20)" class="preset-tile active-preset p-3 rounded-2xl border-2 border-amber-400 bg-amber-500/20 text-center" data-sides="20">
-              <span class="text-xl font-bold text-amber-300 font-fun block">D20</span>
-              <span class="text-[10px] text-amber-300/80">20 Facce (Metallo)</span>
+            <button type="button" onclick="setCommonFaces(20)" class="preset-tile active-preset p-2.5 rounded-xl border-2 border-amber-400 bg-amber-500/20 text-center active:scale-95 transition" data-sides="20">
+              <span class="text-lg sm:text-xl font-bold text-amber-300 font-fun block">D20</span>
+              <span class="text-[10px] text-amber-300/80">20 Facce</span>
             </button>
           </div>
         </div>
 
         <div id="customFacesWrap" class="hidden">
-          <div id="individualDiceRows" class="space-y-2 max-h-48 overflow-y-auto pr-1"></div>
+          <div id="individualDiceRows" class="space-y-1.5 max-h-40 overflow-y-auto pr-1"></div>
         </div>
       </div>
 
       <!-- Pulsante Lancio nel Vassoio -->
-      <button type="button" onclick="triggerRollSequence()" class="w-full py-4 rounded-2xl bg-gradient-to-r from-amber-500 via-rose-500 to-indigo-600 hover:from-amber-400 hover:via-rose-400 hover:to-indigo-500 active:scale-[0.98] transition shadow-xl shadow-rose-500/25 flex items-center justify-center gap-3 font-fun font-bold text-xl text-white">
-        <i class="fa-solid fa-dice-d20 text-2xl animate-spin" style="animation-duration: 8s;"></i>
+      <button type="button" onclick="triggerRollSequence()" class="w-full py-4 rounded-2xl bg-gradient-to-r from-amber-500 via-rose-500 to-indigo-600 active:from-amber-400 active:via-rose-400 active:to-indigo-500 active:scale-[0.98] transition shadow-xl shadow-rose-500/25 flex items-center justify-center gap-2.5 font-fun font-bold text-lg sm:text-xl text-white">
+        <i class="fa-solid fa-dice-d20 text-xl animate-spin" style="animation-duration: 8s;"></i>
         <span id="launchBtnLabel">LANCIA NEL VASSOIO 3D</span>
       </button>
     </section>
 
     <!-- 2. ARENA 3D & RISULTATO DETTAGLIATO -->
-    <section id="arenaPanel" class="hidden w-full flex flex-col space-y-4">
+    <section id="arenaPanel" class="hidden w-full flex flex-col space-y-3">
       
       <!-- Banner Turno Giocatore -->
-      <div id="turnBannerWrap" class="hidden bg-slate-800/90 border border-indigo-500/30 rounded-2xl p-3 flex items-center justify-between shadow-lg">
-        <div class="flex items-center gap-3">
-          <div id="turnAvatarBadge" class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-white shadow" style="background-color: #6366f1;">
+      <div id="turnBannerWrap" class="hidden bg-slate-800/90 border border-indigo-500/30 rounded-2xl p-2.5 sm:p-3 flex items-center justify-between shadow-lg">
+        <div class="flex items-center gap-2.5">
+          <div id="turnAvatarBadge" class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-white shadow shrink-0" style="background-color: #6366f1;">
             1
           </div>
-          <div>
-            <span class="text-[10px] text-slate-400 uppercase tracking-widest block font-bold">Turno Corrente</span>
-            <span id="turnPlayerName" class="text-sm sm:text-base font-bold text-white">Giocatore 1</span>
+          <div class="truncate max-w-[170px] sm:max-w-xs">
+            <span class="text-[9px] text-slate-400 uppercase tracking-widest block font-bold">Turno Corrente</span>
+            <span id="turnPlayerName" class="text-xs sm:text-base font-bold text-white truncate block">Giocatore 1</span>
           </div>
         </div>
-        <span id="roundCounterBadge" class="px-3 py-1 rounded-full bg-slate-900 border border-slate-700 text-xs font-mono text-amber-300 font-bold">
+        <span id="roundCounterBadge" class="px-2.5 py-1 rounded-full bg-slate-900 border border-slate-700 text-[11px] sm:text-xs font-mono text-amber-300 font-bold shrink-0">
           Round 1
         </span>
       </div>
 
-      <div class="relative w-full bg-slate-900 rounded-3xl border-2 border-slate-700/80 shadow-2xl p-2 sm:p-3">
-        <div class="flex items-center justify-between px-3 py-2 border-b border-slate-800 text-xs">
-          <div id="rollingStatePill" class="px-3 py-1 rounded-full font-bold uppercase tracking-wider bg-rose-500/20 text-rose-300 border border-rose-500/30 flex items-center gap-2">
-            <span class="w-2 h-2 rounded-full bg-rose-400 animate-ping"></span>
-            I dadi stanno rotolando nel vassoio...
+      <div class="relative w-full bg-slate-900 rounded-3xl border border-slate-700/80 shadow-2xl p-1.5 sm:p-2.5">
+        <div class="flex items-center justify-between px-2.5 py-1.5 border-b border-slate-800 text-[11px]">
+          <div id="rollingStatePill" class="px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider bg-rose-500/20 text-rose-300 border border-rose-500/30 flex items-center gap-1.5">
+            <span class="w-1.5 h-1.5 rounded-full bg-rose-400 animate-ping"></span>
+            Lancio in corso...
           </div>
-          <span class="text-slate-400 font-mono hidden sm:inline">
-            <i class="fa-solid fa-hand-pointer text-amber-400 mr-1"></i> Trascina per ruotare la visuale
+          <span class="text-slate-400 font-mono text-[10px] sm:text-xs">
+            <i class="fa-solid fa-hand-pointer text-amber-400 mr-1"></i> Ruota visuale
           </span>
         </div>
 
@@ -361,58 +446,139 @@
       </div>
 
       <!-- Risultati Individuali -->
-      <div class="bg-slate-800/85 backdrop-blur-md rounded-2xl p-4 sm:p-5 border border-slate-700 shadow-xl">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3 border-b border-slate-700/70 pb-2">
-          <h3 class="font-fun font-bold text-base text-white flex items-center gap-2">
+      <div class="bg-slate-800/85 backdrop-blur-md rounded-2xl p-3 sm:p-4 border border-slate-700 shadow-xl">
+        <div class="flex items-center justify-between gap-2 mb-2.5 border-b border-slate-700/70 pb-1.5">
+          <h3 class="font-fun font-bold text-sm sm:text-base text-white flex items-center gap-2">
             <i class="fa-solid fa-list-check text-amber-400"></i> Risultati Individuali
           </h3>
-          <span class="text-xs px-2.5 py-0.5 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-semibold self-start sm:self-auto">
-            Numeri complanari ad altissima visibilità
-          </span>
         </div>
 
-        <div id="polyhedralResultsGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 mb-4"></div>
+        <div id="polyhedralResultsGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 mb-3"></div>
 
         <!-- Somma Totale -->
-        <div class="bg-slate-900/90 rounded-2xl p-4 border border-slate-800 flex items-center justify-center">
-          <div class="flex items-center justify-center gap-4 bg-slate-800/90 px-8 py-3 rounded-2xl border border-amber-500/30 shadow-lg shadow-amber-500/10">
-            <span class="text-xs uppercase font-extrabold tracking-widest text-amber-300/80">Somma Totale:</span>
-            <span id="valTotalSum" class="text-3xl sm:text-4xl font-fun font-bold text-amber-400 leading-none">--</span>
+        <div class="bg-slate-900/90 rounded-2xl p-3 border border-slate-800 flex items-center justify-center">
+          <div class="flex items-center justify-center gap-3 bg-slate-800/90 px-6 py-2.5 rounded-xl border border-amber-500/30 shadow-lg shadow-amber-500/10">
+            <span class="text-[11px] uppercase font-extrabold tracking-widest text-amber-300/80">Somma Totale:</span>
+            <span id="valTotalSum" class="text-2xl sm:text-3xl font-fun font-bold text-amber-400 leading-none">--</span>
           </div>
         </div>
       </div>
 
       <!-- Tabellone Punteggi Multiplayer -->
-      <div id="scoreboardPanel" class="hidden bg-slate-800/85 backdrop-blur-md rounded-2xl p-4 border border-slate-700 shadow-xl">
-        <h4 class="font-fun font-bold text-sm text-indigo-300 mb-3 flex items-center gap-2">
-          <i class="fa-solid fa-trophy text-amber-400"></i> Tabellone Punteggi della Partita
+      <div id="scoreboardPanel" class="hidden bg-slate-800/85 backdrop-blur-md rounded-2xl p-3 border border-slate-700 shadow-xl">
+        <h4 class="font-fun font-bold text-xs sm:text-sm text-indigo-300 mb-2 flex items-center gap-1.5">
+          <i class="fa-solid fa-trophy text-amber-400"></i> Tabellone Partita
         </h4>
-        <div id="scoreboardGrid" class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs"></div>
+        <div id="scoreboardGrid" class="grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-xs"></div>
+      </div>
+
+      <!-- Registro / Storico dei Lanci -->
+      <div id="historyPanel" class="bg-slate-800/85 backdrop-blur-md rounded-2xl p-3 border border-slate-700 shadow-xl">
+        <div class="flex items-center justify-between pb-1.5 border-b border-slate-700/70 mb-2">
+          <div class="flex items-center gap-2">
+            <i class="fa-solid fa-scroll text-amber-400 text-xs"></i>
+            <h4 class="font-fun font-bold text-xs sm:text-sm text-white">Registro dei Lanci</h4>
+            <span id="historyCountBadge" class="text-[9px] font-mono px-2 py-0.5 rounded-full bg-slate-900 border border-slate-700 text-amber-300 font-bold">0 tiri</span>
+          </div>
+          <div class="flex items-center gap-1">
+            <button type="button" onclick="toggleHistoryCollapse()" class="text-slate-400 active:text-white p-1 rounded text-xs">
+              <i id="historyToggleIcon" class="fa-solid fa-chevron-up"></i>
+            </button>
+            <button type="button" onclick="clearRollHistory()" class="text-slate-400 active:text-rose-400 p-1 rounded text-xs" title="Svuota registro">
+              <i class="fa-solid fa-trash-can"></i>
+            </button>
+          </div>
+        </div>
+        <div id="historyRowsContainer" class="space-y-1.5 max-h-36 overflow-y-auto pr-1 text-xs">
+          <div class="text-slate-500 text-center py-2.5 italic text-[11px]">Nessun lancio registrato in questa sessione.</div>
+        </div>
       </div>
 
       <!-- Azioni Rapide Sotto l'Arena -->
-      <div class="bg-slate-800/75 backdrop-blur-md rounded-2xl p-3 border border-slate-700 shadow-xl">
-        <div class="grid grid-cols-3 gap-2 w-full">
-          <button id="arenaRollBtn" onclick="reRollSameDice()" class="w-full px-2 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 text-slate-950 font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition active:scale-95">
+      <div class="bg-slate-800/85 backdrop-blur-md rounded-2xl p-2.5 border border-slate-700 shadow-xl">
+        <div class="grid grid-cols-3 gap-1.5 w-full">
+          <button id="arenaRollBtn" onclick="reRollSameDice()" class="w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 active:from-amber-400 text-slate-950 font-bold text-xs sm:text-sm flex items-center justify-center gap-1 transition active:scale-95 shadow">
             <i class="fa-solid fa-rotate-right"></i>
-            <span id="reRollBtnLabel">Lancia di Nuovo</span>
+            <span id="reRollBtnLabel" class="truncate">Di Nuovo</span>
           </button>
-          <button onclick="showConfigScreen()" class="w-full px-2 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition active:scale-95">
-            <i class="fa-solid fa-sliders"></i>
-            <span>Cambia Dadi/Tavolo</span>
+          <button id="arenaConfigBtn" onclick="handleArenaConfigClick()" class="w-full py-3 rounded-xl bg-indigo-600 active:bg-indigo-500 text-white font-semibold text-xs sm:text-sm flex items-center justify-center gap-1 transition active:scale-95 shadow">
+            <i id="arenaConfigIcon" class="fa-solid fa-sliders"></i>
+            <span id="arenaConfigLabel" class="truncate">Configura</span>
           </button>
-          <button onclick="showConfigScreen()" class="w-full px-2 py-3 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-200 font-semibold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition active:scale-95">
+          <button onclick="handleHomeMenuClick()" class="w-full py-3 rounded-xl bg-slate-700 active:bg-slate-600 text-slate-200 font-semibold text-xs sm:text-sm flex items-center justify-center gap-1 transition active:scale-95">
             <i class="fa-solid fa-house"></i>
-            <span>Menu Iniziale</span>
+            <span class="truncate">Menu</span>
           </button>
         </div>
       </div>
     </section>
 
+    <!-- Modale Cambio Solo Tavolo (Attivo durante la Sfida) -->
+    <div id="quickTableModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/80 backdrop-blur-sm">
+      <div class="bg-slate-900 border border-slate-700 rounded-3xl p-4 sm:p-5 max-w-sm w-full shadow-2xl text-center">
+        <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-800">
+          <h4 class="font-fun font-bold text-sm sm:text-base text-white flex items-center gap-2">
+            <i class="fa-solid fa-dungeon text-amber-400"></i> Cambia Tavolo
+          </h4>
+          <button type="button" onclick="closeQuickTableModal()" class="w-8 h-8 rounded-full bg-slate-800 active:bg-slate-700 text-slate-400 active:text-white flex items-center justify-center text-sm transition">
+            ✕
+          </button>
+        </div>
+        <p class="text-[11px] text-amber-300/80 mb-3 text-left">
+          <i class="fa-solid fa-shield-halved mr-1"></i> Sfida in corso: i dadi restano invariati, ma puoi cambiare l'ambiente!
+        </p>
+        <div class="grid grid-cols-2 gap-1.5 text-xs mb-3">
+          <button type="button" onclick="changeTableMidChallenge('tavern')" class="quick-table-btn p-2 rounded-xl border border-slate-700 bg-slate-800 text-slate-200 font-bold active:scale-95 transition" data-qtable="tavern">
+            🍺 Taverna
+          </button>
+          <button type="button" onclick="changeTableMidChallenge('crypt')" class="quick-table-btn p-2 rounded-xl border border-slate-700 bg-slate-800 text-slate-200 font-bold active:scale-95 transition" data-qtable="crypt">
+            💀 Cripta
+          </button>
+          <button type="button" onclick="changeTableMidChallenge('altar')" class="quick-table-btn p-2 rounded-xl border border-slate-700 bg-slate-800 text-slate-200 font-bold active:scale-95 transition" data-qtable="altar">
+            🔮 Altare
+          </button>
+          <button type="button" onclick="changeTableMidChallenge('steampunk')" class="quick-table-btn p-2 rounded-xl border border-slate-700 bg-slate-800 text-slate-200 font-bold active:scale-95 transition" data-qtable="steampunk">
+            ⚙️ Fonderia
+          </button>
+          <button type="button" onclick="changeTableMidChallenge('felt')" class="quick-table-btn col-span-2 p-2 rounded-xl border border-slate-700 bg-slate-800 text-slate-200 font-bold active:scale-95 transition" data-qtable="felt">
+            🎲 Feltro Verde
+          </button>
+        </div>
+        <button type="button" onclick="closeQuickTableModal()" class="w-full py-2.5 rounded-xl bg-slate-800 active:bg-slate-700 text-slate-300 font-bold text-xs transition">
+          Torna alla Partita
+        </button>
+      </div>
+    </div>
+
+    <!-- 3. MODALE VITTORIA / PODIO SFIDA FINALE -->
+    <div id="challengeVictoryModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-3.5 bg-black/85 backdrop-blur-md">
+      <div class="bg-gradient-to-b from-slate-900 to-slate-950 border-2 border-amber-500/60 rounded-3xl p-5 sm:p-7 max-w-md w-full shadow-2xl relative text-center">
+        <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-500 to-yellow-300 mx-auto flex items-center justify-center mb-2.5 shadow-lg shadow-amber-500/30">
+          <i class="fa-solid fa-crown text-slate-950 text-2xl"></i>
+        </div>
+
+        <h3 class="text-[10px] uppercase tracking-widest text-amber-400 font-extrabold mb-0.5">Sfida Conclusa!</h3>
+        <h2 id="victoryWinnerTitle" class="text-xl sm:text-2xl font-fun font-bold text-white mb-1.5">Vince Giocatore 1!</h2>
+        <p id="victorySubtitle" class="text-xs text-slate-400 mb-4">Vittoria conquistata a fine round</p>
+
+        <!-- Podio & Classifica Finale -->
+        <div id="victoryRankingsList" class="space-y-1.5 mb-5 max-h-48 overflow-y-auto pr-1"></div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <button type="button" onclick="restartRematch()" class="py-3 px-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 active:from-amber-400 text-slate-950 font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition active:scale-95 shadow">
+            <i class="fa-solid fa-rotate-right"></i> Rivincita
+          </button>
+          <button type="button" onclick="closeVictoryModalAndReset()" class="py-3 px-3 rounded-xl bg-indigo-600 active:bg-indigo-500 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition active:scale-95 shadow">
+            <i class="fa-solid fa-house"></i> Nuovo Tavolo
+          </button>
+        </div>
+      </div>
+    </div>
+
   </main>
 
-  <footer class="w-full max-w-5xl mx-auto text-center py-2.5 text-xs text-slate-500 border-t border-slate-800/80 mt-4">
-    Nerdice • Lancia dadi Nerd 3D con audio realistico di lancio e numeri pieni luminescenti
+  <footer class="w-full max-w-5xl mx-auto text-center py-2 text-[11px] text-slate-500 border-t border-slate-800/80 mt-3">
+    Nerdice - Lancia dadi Nerd
   </footer>
 
   <script>
@@ -431,8 +597,11 @@
     ];
 
     const appState = {
-      sound: true, // Suoni impatto dadi permanentemente attivi
+      sound: true,
       music: true,
+      shakeEnabled: true,
+      historyCollapsed: false,
+      rollHistory: [],
       activeTable: 'tavern',
       currentSkin: 'bronze',
       customTexture: null,
@@ -445,13 +614,42 @@
       playerCount: 1,
       currentPlayerIndex: 0,
       currentRound: 1,
+      gameMode: 'free',
+      targetRounds: 3,
+      challengeFinished: false,
       players: [
-        { name: 'Giocatore 1', color: PLAYER_COLORS[0], totalScore: 0, lastRoll: 0, rollsCount: 0 }
+        { name: 'Giocatore 1', color: PLAYER_COLORS[0], totalScore: 0, lastRoll: 0, rollsCount: 0, roundHistory: [] }
       ]
     };
 
+    function initAndroidBackNavigation() {
+      if (!history.state) {
+        history.replaceState({ screen: 'config' }, '');
+      }
+
+      window.addEventListener('popstate', () => {
+        const victoryModal = document.getElementById('challengeVictoryModal');
+        if (victoryModal && !victoryModal.classList.contains('hidden')) {
+          closeVictoryModalAndReset();
+          return;
+        }
+
+        const tableModal = document.getElementById('quickTableModal');
+        if (tableModal && !tableModal.classList.contains('hidden')) {
+          closeQuickTableModal();
+          return;
+        }
+
+        const arena = document.getElementById('arenaPanel');
+        if (arena && !arena.classList.contains('hidden')) {
+          showConfigScreen(false);
+          return;
+        }
+      });
+    }
+
     function isLightSkin(skinName) {
-      return skinName === 'marble' || skinName === 'bone';
+      return skinName === 'ice';
     }
 
     function setPlayerCount(count) {
@@ -471,7 +669,8 @@
           color: PLAYER_COLORS[i % PLAYER_COLORS.length],
           totalScore: 0,
           lastRoll: 0,
-          rollsCount: 0
+          rollsCount: 0,
+          roundHistory: []
         });
       }
       if (appState.players.length > parsed) {
@@ -483,6 +682,7 @@
       }
 
       renderPlayerNamesList();
+      updateChallengeConfigUI();
       updateTurnUI();
     }
 
@@ -490,15 +690,56 @@
       setPlayerCount(appState.playerCount + parseInt(delta, 10));
     }
 
+    function setGameMode(mode) {
+      appState.gameMode = mode;
+      const freeBtn = document.getElementById('modeFreeBtn');
+      const challengeBtn = document.getElementById('modeChallengeBtn');
+      const challengeDetails = document.getElementById('challengeDetailsBox');
+
+      if (mode === 'challenge') {
+        if (freeBtn) freeBtn.className = 'flex-1 py-1.5 px-3 rounded-lg text-slate-400 font-medium text-xs transition active:scale-95';
+        if (challengeBtn) challengeBtn.className = 'flex-1 py-1.5 px-3 rounded-lg bg-amber-500 text-slate-950 font-bold text-xs shadow-lg transition active:scale-95';
+        if (challengeDetails) challengeDetails.classList.remove('hidden');
+      } else {
+        if (freeBtn) freeBtn.className = 'flex-1 py-1.5 px-3 rounded-lg bg-indigo-600 text-white font-bold text-xs shadow-lg transition active:scale-95';
+        if (challengeBtn) challengeBtn.className = 'flex-1 py-1.5 px-3 rounded-lg text-slate-400 font-medium text-xs transition active:scale-95';
+        if (challengeDetails) challengeDetails.classList.add('hidden');
+      }
+      updateTurnUI();
+    }
+
+    function setTargetRounds(val) {
+      const parsed = Math.max(1, Math.min(20, parseInt(val, 10) || 1));
+      appState.targetRounds = parsed;
+      const tag = document.getElementById('targetRoundsTag');
+      if (tag) tag.textContent = `${parsed} Round`;
+      const slider = document.getElementById('targetRoundsSlider');
+      if (slider) slider.value = parsed;
+
+      document.querySelectorAll('.round-preset-btn').forEach(btn => {
+        if (parseInt(btn.getAttribute('data-rounds'), 10) === parsed) {
+          btn.className = 'round-preset-btn py-2 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs shadow transition';
+        } else {
+          btn.className = 'round-preset-btn py-2 rounded-xl bg-slate-800 text-slate-300 active:bg-slate-700 text-xs border border-slate-700 transition';
+        }
+      });
+      updateTurnUI();
+    }
+
+    function updateChallengeConfigUI() {
+      const box = document.getElementById('challengeModeCard');
+      if (!box) return;
+      if (appState.playerCount > 1) {
+        box.classList.remove('hidden');
+      } else {
+        box.classList.add('hidden');
+        setGameMode('free');
+      }
+    }
+
     function renderPlayerNamesList() {
       const container = document.getElementById('playerNamesContainer');
       if (!container) return;
-
-      if (appState.playerCount <= 1) {
-        container.classList.add('hidden');
-        container.innerHTML = '';
-        return;
-      }
 
       container.classList.remove('hidden');
       container.innerHTML = '';
@@ -506,12 +747,14 @@
       appState.players.forEach((p, idx) => {
         const row = document.createElement('div');
         row.className = 'flex items-center gap-2 p-1.5 rounded-xl bg-slate-800/80 border border-slate-700 text-xs';
+        const labelText = appState.playerCount === 1 ? 'Tuo Nome:' : `Giocatore ${idx + 1}:`;
         row.innerHTML = `
           <span class="w-6 h-6 rounded-full flex items-center justify-center text-white font-bold text-[10px] shrink-0" style="background-color: ${p.color}">
             ${idx + 1}
           </span>
-          <input type="text" value="${p.name}" onchange="updatePlayerName(${idx}, this.value)" 
-                 class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white text-xs w-full focus:outline-none focus:border-indigo-500">
+          <span class="text-slate-400 font-medium shrink-0 text-[11px]">${labelText}</span>
+          <input type="text" value="${p.name}" oninput="updatePlayerName(${idx}, this.value)" placeholder="Inserisci nome..."
+                 class="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-white text-xs w-full focus:outline-none focus:border-indigo-500 transition">
         `;
         container.appendChild(row);
       });
@@ -519,7 +762,8 @@
 
     function updatePlayerName(idx, name) {
       if (appState.players[idx]) {
-        appState.players[idx].name = name.trim() || `Giocatore ${idx + 1}`;
+        const trimmed = name.trim();
+        appState.players[idx].name = trimmed || (appState.playerCount === 1 ? 'Giocatore 1' : `Giocatore ${idx + 1}`);
         updateTurnUI();
       }
     }
@@ -527,12 +771,14 @@
     function updateTurnUI() {
       const turnBanner = document.getElementById('turnBannerWrap');
       const scoreboard = document.getElementById('scoreboardPanel');
+      const curPlayer = appState.players[appState.currentPlayerIndex] || appState.players[0];
+
+      updateArenaButtonsForGameMode();
 
       if (appState.playerCount > 1) {
         if (turnBanner) turnBanner.classList.remove('hidden');
         if (scoreboard) scoreboard.classList.remove('hidden');
 
-        const curPlayer = appState.players[appState.currentPlayerIndex] || appState.players[0];
         const avatar = document.getElementById('turnAvatarBadge');
         if (avatar) {
           avatar.style.backgroundColor = curPlayer.color;
@@ -543,7 +789,15 @@
         if (nameLabel) nameLabel.textContent = curPlayer.name;
 
         const roundLabel = document.getElementById('roundCounterBadge');
-        if (roundLabel) roundLabel.textContent = `Round ${appState.currentRound}`;
+        if (roundLabel) {
+          if (appState.gameMode === 'challenge') {
+            roundLabel.textContent = `Round ${appState.currentRound} / ${appState.targetRounds}`;
+            roundLabel.className = 'px-2.5 py-1 rounded-full bg-amber-500/20 border border-amber-500/40 text-[11px] sm:text-xs font-mono text-amber-300 font-bold shrink-0';
+          } else {
+            roundLabel.textContent = `Round ${appState.currentRound}`;
+            roundLabel.className = 'px-2.5 py-1 rounded-full bg-slate-900 border border-slate-700 text-[11px] sm:text-xs font-mono text-amber-300 font-bold shrink-0';
+          }
+        }
 
         const launchBtnLabel = document.getElementById('launchBtnLabel');
         if (launchBtnLabel) launchBtnLabel.textContent = `LANCIA PER ${curPlayer.name.toUpperCase()}`;
@@ -555,10 +809,19 @@
         if (scoreboard) scoreboard.classList.add('hidden');
 
         const launchBtnLabel = document.getElementById('launchBtnLabel');
-        if (launchBtnLabel) launchBtnLabel.textContent = 'LANCIA NEL VASSOIO 3D';
+        if (launchBtnLabel) {
+          const playerName = curPlayer && curPlayer.name && curPlayer.name !== 'Giocatore 1' 
+            ? `LANCIA PER ${curPlayer.name.toUpperCase()}` 
+            : 'LANCIA NEL VASSOIO 3D';
+          launchBtnLabel.textContent = playerName;
+        }
 
         const reRollBtnLabel = document.getElementById('reRollBtnLabel');
-        if (reRollBtnLabel) reRollBtnLabel.textContent = 'Lancia di Nuovo';
+        if (reRollBtnLabel) {
+          reRollBtnLabel.textContent = curPlayer && curPlayer.name && curPlayer.name !== 'Giocatore 1'
+            ? `Lancia per ${curPlayer.name}`
+            : 'Di Nuovo';
+        }
       }
     }
 
@@ -574,38 +837,169 @@
         const isLeader = p.totalScore > 0 && p.totalScore === maxScore;
 
         const card = document.createElement('div');
-        card.className = `p-2.5 rounded-xl border flex flex-col justify-between ${
+        card.className = `p-2 rounded-xl border flex flex-col justify-between ${
           isCurrent ? 'bg-indigo-950/60 border-indigo-500 shadow-md shadow-indigo-500/20' : 'bg-slate-900/80 border-slate-800'
         }`;
 
         card.innerHTML = `
-          <div class="flex items-center justify-between mb-1">
-            <span class="flex items-center gap-1.5 font-bold truncate text-[11px]" style="color: ${p.color}">
-              <span class="w-2 h-2 rounded-full" style="background: ${p.color}"></span>
-              ${p.name}
+          <div class="flex items-center justify-between mb-0.5">
+            <span class="flex items-center gap-1 font-bold truncate text-[10px] sm:text-[11px]" style="color: ${p.color}">
+              <span class="w-2 h-2 rounded-full shrink-0" style="background: ${p.color}"></span>
+              <span class="truncate">${p.name}</span>
             </span>
             ${isLeader ? '<span class="text-xs" title="In Testa">👑</span>' : ''}
           </div>
-          <div class="flex items-baseline justify-between mt-1">
-            <span class="text-[10px] text-slate-400">Ultimo: <b class="text-white">${p.lastRoll || '--'}</b></span>
-            <span class="text-base font-fun font-bold text-amber-400">${p.totalScore}</span>
+          <div class="flex items-baseline justify-between mt-0.5">
+            <span class="text-[9px] text-slate-400">Ultimo: <b class="text-white">${p.lastRoll || '--'}</b></span>
+            <span class="text-sm sm:text-base font-fun font-bold text-amber-400">${p.totalScore}</span>
           </div>
         `;
         grid.appendChild(card);
       });
     }
 
-    /* AUDIO ENGINE */
+    function isChallengeActive() {
+      return (appState.playerCount > 1 && appState.gameMode === 'challenge' && !appState.challengeFinished);
+    }
+
+    function updateArenaButtonsForGameMode() {
+      const configBtn = document.getElementById('arenaConfigBtn');
+      const configLabel = document.getElementById('arenaConfigLabel');
+      const configIcon = document.getElementById('arenaConfigIcon');
+      if (!configBtn || !configLabel || !configIcon) return;
+
+      if (isChallengeActive()) {
+        configBtn.className = 'w-full py-3 rounded-xl bg-amber-600 active:bg-amber-500 text-slate-950 font-bold text-xs sm:text-sm flex items-center justify-center gap-1 transition active:scale-95 shadow';
+        configIcon.className = 'fa-solid fa-dungeon';
+        configLabel.textContent = 'Tavolo';
+      } else {
+        configBtn.className = 'w-full py-3 rounded-xl bg-indigo-600 active:bg-indigo-500 text-white font-semibold text-xs sm:text-sm flex items-center justify-center gap-1 transition active:scale-95 shadow';
+        configIcon.className = 'fa-solid fa-sliders';
+        configLabel.textContent = 'Configura';
+      }
+    }
+
+    function handleArenaConfigClick() {
+      if (isChallengeActive()) {
+        openQuickTableModal();
+      } else {
+        showConfigScreen();
+      }
+    }
+
+    function handleHomeMenuClick() {
+      if (isChallengeActive()) {
+        appState.challengeFinished = false;
+      }
+      showConfigScreen();
+    }
+
+    function openQuickTableModal() {
+      const modal = document.getElementById('quickTableModal');
+      if (!modal) return;
+      highlightActiveQuickTableBtn();
+      modal.classList.remove('hidden');
+    }
+
+    function closeQuickTableModal() {
+      const modal = document.getElementById('quickTableModal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function highlightActiveQuickTableBtn() {
+      document.querySelectorAll('.quick-table-btn').forEach(btn => {
+        if (btn.getAttribute('data-qtable') === appState.activeTable) {
+          btn.classList.add('border-2', 'border-amber-400', 'bg-amber-500/20', 'text-amber-300');
+          btn.classList.remove('border-slate-700', 'bg-slate-800', 'text-slate-200');
+        } else {
+          btn.classList.remove('border-2', 'border-amber-400', 'bg-amber-500/20', 'text-amber-300');
+          btn.classList.add('border-slate-700', 'bg-slate-800', 'text-slate-200');
+        }
+      });
+    }
+
+    function changeTableMidChallenge(tableName) {
+      setTablePreset(tableName);
+      highlightActiveQuickTableBtn();
+      playActiveMusic();
+      closeQuickTableModal();
+    }
+
+    function triggerHaptic(type = 'bounce') {
+      try {
+        if (!('vibrate' in navigator)) return;
+        if (type === 'bounce') {
+          navigator.vibrate(12);
+        } else if (type === 'settle') {
+          navigator.vibrate([16, 35, 20]);
+        } else if (type === 'crit') {
+          navigator.vibrate([40, 50, 40, 50, 70]);
+        }
+      } catch (e) {}
+    }
+
+    let lastShakeX = 0, lastShakeY = 0, lastShakeZ = 0;
+    let lastShakeTimestamp = 0;
+    const SHAKE_THRESHOLD = 20;
+
+    function initShakeDetection() {
+      try {
+        if (typeof window !== 'undefined' && 'DeviceMotionEvent' in window) {
+          window.addEventListener('devicemotion', handleDeviceMotion, { passive: true });
+        }
+      } catch (e) {}
+    }
+
+    function handleDeviceMotion(e) {
+      if (!appState.shakeEnabled || appState.isRolling) return;
+      const acc = e.accelerationIncludingGravity || e.acceleration;
+      if (!acc) return;
+
+      const now = performance.now();
+      if (now - lastShakeTimestamp < 900) return;
+
+      const curX = acc.x || 0;
+      const curY = acc.y || 0;
+      const curZ = acc.z || 0;
+
+      const delta = Math.abs(curX - lastShakeX) + Math.abs(curY - lastShakeY) + Math.abs(curZ - lastShakeZ);
+
+      if (delta > SHAKE_THRESHOLD) {
+        lastShakeTimestamp = now;
+        triggerHaptic('bounce');
+        triggerRollSequence();
+      }
+
+      lastShakeX = curX;
+      lastShakeY = curY;
+      lastShakeZ = curZ;
+    }
+
+    function toggleShake() {
+      appState.shakeEnabled = !appState.shakeEnabled;
+      const icon = document.getElementById('shakeIcon');
+      const text = document.getElementById('shakeBtnText');
+      if (appState.shakeEnabled) {
+        if (icon) icon.className = 'fa-solid fa-mobile-screen-button text-amber-400';
+        if (text) text.textContent = 'Scuoti ON';
+      } else {
+        if (icon) icon.className = 'fa-solid fa-mobile-screen-button text-slate-500';
+        if (text) text.textContent = 'Scuoti OFF';
+      }
+    }
+
     let audioCtx = null;
 
     function getAudioContext() {
-      if (!audioCtx) {
-        const AudioClass = window.AudioContext || window.webkitAudioContext;
-        audioCtx = new AudioClass();
-      }
-      if (audioCtx.state === 'suspended') {
-        audioCtx.resume();
-      }
+      try {
+        if (!audioCtx) {
+          const AudioClass = window.AudioContext || window.webkitAudioContext;
+          if (AudioClass) audioCtx = new AudioClass();
+        }
+        if (audioCtx && audioCtx.state === 'suspended') {
+          audioCtx.resume().catch(() => {});
+        }
+      } catch (e) {}
       return audioCtx;
     }
 
@@ -624,17 +1018,20 @@
       forgeAudioEl = document.getElementById('forgeThemeAudio');
       feltAudioEl = document.getElementById('feltThemeAudio');
 
+      [bgAudioEl, tavernAudioEl, cryptAudioEl, altarAudioEl, forgeAudioEl, feltAudioEl].forEach(a => {
+        if (a) {
+          a.volume = 0.20;
+          a.addEventListener('error', () => {});
+        }
+      });
       if (bgAudioEl) bgAudioEl.volume = 0.12;
-      if (tavernAudioEl) tavernAudioEl.volume = 0.22;
-      if (cryptAudioEl) cryptAudioEl.volume = 0.22;
-      if (altarAudioEl) altarAudioEl.volume = 0.22;
-      if (forgeAudioEl) forgeAudioEl.volume = 0.22;
-      if (feltAudioEl) feltAudioEl.volume = 0.22;
     }
 
     function stopAllMusic() {
       [bgAudioEl, tavernAudioEl, cryptAudioEl, altarAudioEl, forgeAudioEl, feltAudioEl].forEach(a => {
-        if (a) a.pause();
+        if (a) {
+          try { a.pause(); } catch(e) {}
+        }
       });
     }
 
@@ -659,9 +1056,10 @@
       }
 
       if (targetAudio) {
-        targetAudio.play().catch(e => {
-          console.log('Riproduzione audio in attesa di interazione:', e);
-        });
+        const p = targetAudio.play();
+        if (p !== undefined) {
+          p.catch(() => {});
+        }
       }
     }
 
@@ -697,6 +1095,7 @@
     function playSynchronizedResinHit(intensity = 1.0, pitchMod = 1.0) {
       try {
         const ctx = getAudioContext();
+        if (!ctx) return;
         const t = ctx.currentTime;
         const clampedInt = Math.max(0.05, Math.min(1.0, intensity));
 
@@ -745,14 +1144,13 @@
         thudGain.connect(ctx.destination);
         thudOsc.start(t);
         thudOsc.stop(t + 0.06);
-      } catch (e) {
-        console.warn('Audio non riproducibile:', e);
-      }
+      } catch (e) {}
     }
 
     function playSynchronizedDieClack() {
       try {
         const ctx = getAudioContext();
+        if (!ctx) return;
         const t = ctx.currentTime;
         const clackOsc = ctx.createOscillator();
         const clackGain = ctx.createGain();
@@ -767,9 +1165,7 @@
         clackGain.connect(ctx.destination);
         clackOsc.start(t);
         clackOsc.stop(t + 0.02);
-      } catch (e) {
-        console.warn('Audio collisione non riproducibile:', e);
-      }
+      } catch (e) {}
     }
 
     function rollCryptographicDie(sides) {
@@ -817,9 +1213,19 @@
         ctx.stroke();
       }
 
-      const numFill = isWinning ? '#ffffff' : (isLight ? '#ff0033' : '#ffffff');
-      const glowColor = isWinning ? '#fef08a' : (isLight ? 'rgba(255, 0, 50, 0.9)' : 'rgba(255, 255, 255, 0.95)');
-      const strokeColor = isWinning ? '#2d1403' : (isLight ? '#2a0005' : '#05070a');
+      let numFill = isWinning ? '#ffffff' : (isLight ? '#0369a1' : '#ffffff');
+      let glowColor = isWinning ? '#fef08a' : (isLight ? 'rgba(3, 105, 161, 0.9)' : 'rgba(255, 255, 255, 0.95)');
+      let strokeColor = isWinning ? '#2d1403' : (isLight ? '#082f49' : '#05070a');
+
+      if (skinName === 'obsidian' && !isWinning) {
+        numFill = '#e9d5ff';
+        glowColor = '#c084fc';
+        strokeColor = '#3b0764';
+      } else if (skinName === 'bark' && !isWinning) {
+        numFill = '#fef08a';
+        glowColor = '#eab308';
+        strokeColor = '#451a03';
+      }
 
       const isTwoDigits = numberText.length > 1;
       const fontSize = isTwoDigits ? 280 : 340;
@@ -845,16 +1251,20 @@
       ctx.fillText(numberText, cx, cy);
 
       if (numberText === '6' || numberText === '9') {
+        const lineY = cy + (isTwoDigits ? 115 : 135);
+        ctx.lineWidth = 20;
+        ctx.strokeStyle = strokeColor;
         ctx.beginPath();
-        ctx.arc(cx, cy + (isTwoDigits ? 110 : 135), 22, 0, Math.PI * 2);
-        ctx.fillStyle = strokeColor;
-        ctx.fill();
+        ctx.moveTo(cx - 70, lineY);
+        ctx.lineTo(cx + 70, lineY);
+        ctx.stroke();
+
+        ctx.lineWidth = 12;
+        ctx.strokeStyle = numFill;
         ctx.beginPath();
-        ctx.arc(cx, cy + (isTwoDigits ? 110 : 135), 16, 0, Math.PI * 2);
-        ctx.fillStyle = numFill;
-        ctx.shadowColor = glowColor;
-        ctx.shadowBlur = 12;
-        ctx.fill();
+        ctx.moveTo(cx - 65, lineY);
+        ctx.lineTo(cx + 65, lineY);
+        ctx.stroke();
       }
 
       const tex = new THREE.CanvasTexture(cv);
@@ -870,7 +1280,7 @@
       if (skinName === 'bronze') {
         ctx.fillStyle = '#b38938';
         ctx.fillRect(0, 0, 512, 512);
-        for (let i = 0; i < 3000; i++) {
+        for (let i = 0; i < 2000; i++) {
           ctx.strokeStyle = Math.random() > 0.5 ? 'rgba(70, 45, 15, 0.18)' : 'rgba(255, 225, 140, 0.15)';
           ctx.beginPath();
           const y = Math.random() * 512;
@@ -885,26 +1295,57 @@
         grad.addColorStop(1, '#a16207');
         ctx.fillStyle = grad;
         ctx.fillRect(0, 0, 512, 512);
-      } else if (skinName === 'marble') {
-        ctx.fillStyle = '#f8fafc';
+      } else if (skinName === 'obsidian') {
+        ctx.fillStyle = '#090511';
         ctx.fillRect(0, 0, 512, 512);
-        ctx.strokeStyle = 'rgba(100, 116, 139, 0.3)';
-        ctx.lineWidth = 4;
-        for (let i = 0; i < 8; i++) {
+        ctx.lineWidth = 3;
+        for (let i = 0; i < 12; i++) {
+          ctx.strokeStyle = Math.random() > 0.5 ? 'rgba(192, 132, 252, 0.65)' : 'rgba(147, 51, 234, 0.45)';
           ctx.beginPath();
-          ctx.moveTo(Math.random() * 512, 0);
-          ctx.bezierCurveTo(Math.random() * 512, 170, Math.random() * 512, 340, Math.random() * 512, 512);
+          let x = Math.random() * 512;
+          let y = Math.random() * 512;
+          ctx.moveTo(x, y);
+          for (let step = 0; step < 6; step++) {
+            x += (Math.random() - 0.5) * 80;
+            y += (Math.random() - 0.5) * 80;
+            ctx.lineTo(x, y);
+          }
           ctx.stroke();
         }
-      } else if (skinName === 'bone') {
-        ctx.fillStyle = '#f5efe0';
+      } else if (skinName === 'ice') {
+        const grad = ctx.createRadialGradient(256, 256, 30, 256, 256, 300);
+        grad.addColorStop(0, '#e0f2fe');
+        grad.addColorStop(0.5, '#7dd3fc');
+        grad.addColorStop(1, '#0284c7');
+        ctx.fillStyle = grad;
         ctx.fillRect(0, 0, 512, 512);
-        ctx.strokeStyle = 'rgba(120, 100, 70, 0.25)';
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
         ctx.lineWidth = 2;
         for (let i = 0; i < 20; i++) {
           ctx.beginPath();
-          ctx.moveTo(Math.random() * 512, Math.random() * 512);
-          ctx.lineTo(Math.random() * 512, Math.random() * 512);
+          let x = Math.random() * 512;
+          let y = Math.random() * 512;
+          ctx.moveTo(x, y);
+          for (let step = 0; step < 4; step++) {
+            x += (Math.random() - 0.5) * 70;
+            y += (Math.random() - 0.5) * 70;
+            ctx.lineTo(x, y);
+          }
+          ctx.stroke();
+        }
+      } else if (skinName === 'bark') {
+        ctx.fillStyle = '#3a2312';
+        ctx.fillRect(0, 0, 512, 512);
+        for (let y = 0; y < 512; y += 4) {
+          ctx.fillStyle = (Math.sin(y * 0.12) > 0) ? '#4a2f18' : '#2b180d';
+          ctx.fillRect(0, y, 512, 4);
+        }
+        ctx.strokeStyle = 'rgba(217, 119, 6, 0.25)';
+        ctx.lineWidth = 2.5;
+        for (let i = 0; i < 12; i++) {
+          ctx.beginPath();
+          ctx.moveTo(0, Math.random() * 512);
+          ctx.bezierCurveTo(170, Math.random() * 512, 340, Math.random() * 512, 512, Math.random() * 512);
           ctx.stroke();
         }
       } else if (skinName === 'magma') {
@@ -912,7 +1353,7 @@
         ctx.fillRect(0, 0, 512, 512);
         ctx.strokeStyle = '#ea580c';
         ctx.lineWidth = 3;
-        for (let i = 0; i < 20; i++) {
+        for (let i = 0; i < 18; i++) {
           ctx.beginPath();
           ctx.moveTo(Math.random() * 512, Math.random() * 512);
           ctx.lineTo(Math.random() * 512, Math.random() * 512);
@@ -933,7 +1374,7 @@
         ctx.fillStyle = '#064e3b';
         ctx.fillRect(0, 0, 512, 512);
         ctx.strokeStyle = '#10b981';
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 2.5;
         for (let i = 0; i < 15; i++) {
           ctx.strokeRect(Math.random() * 400, Math.random() * 400, 100, 100);
         }
@@ -962,6 +1403,14 @@
       return new THREE.CanvasTexture(cv);
     }
 
+    function getSkinMaterialProps(skinName) {
+      if (skinName === 'obsidian') return { roughness: 0.12, metalness: 0.85 };
+      if (skinName === 'ice') return { roughness: 0.22, metalness: 0.15 };
+      if (skinName === 'bark') return { roughness: 0.85, metalness: 0.04 };
+      if (skinName === 'gold') return { roughness: 0.25, metalness: 0.85 };
+      return { roughness: 0.35, metalness: 0.45 };
+    }
+
     function setDiceSkin(skin) {
       appState.currentSkin = skin;
       document.querySelectorAll('.skin-btn').forEach(b => {
@@ -973,7 +1422,8 @@
         act.classList.remove('border-slate-700', 'bg-slate-800', 'text-slate-200');
         act.classList.add('active-skin', 'border-2', 'border-amber-400', 'bg-amber-500/20', 'text-amber-300');
       }
-      document.getElementById('currentSkinBadge').textContent = skin.toUpperCase();
+      const badge = document.getElementById('currentSkinBadge');
+      if (badge) badge.textContent = skin.toUpperCase();
     }
 
     function handleCustomTextureUpload(e) {
@@ -983,21 +1433,28 @@
       r.onload = (ev) => {
         const img = new Image();
         img.onload = () => {
-          appState.customTexture = new THREE.CanvasTexture(img);
+          const cv = document.createElement('canvas');
+          cv.width = 512;
+          cv.height = 512;
+          const ctx = cv.getContext('2d');
+          ctx.drawImage(img, 0, 0, 512, 512);
+          const tex = new THREE.CanvasTexture(cv);
+          tex.needsUpdate = true;
+          appState.customTexture = tex;
           setDiceSkin('custom');
-          document.getElementById('currentSkinBadge').textContent = "IMMAGINE CARICATA";
+          const badge = document.getElementById('currentSkinBadge');
+          if (badge) badge.textContent = "IMMAGINE CARICATA";
         };
         img.src = ev.target.result;
       };
       r.readAsDataURL(file);
     }
 
-    function createD10Geometry(radius) {
-      // Costruzione geometrica perfetta di un solido chiuso: Trapezoedro Pentagonale a 10 facce aquilone (kite)
-      // Ogni faccia aquilone è composta da due triangoli uniti lungo la diagonale, condividendo perfettamente i vertici
+    function createD10CompleteStructure(radius) {
       const hApex = radius * 1.30;
       const rEquator = radius * 1.10;
-      const hEquator = radius * 0.28;
+      const cos36 = Math.cos(Math.PI / 5);
+      const hEquator = hApex * ((1 - cos36) / (1 + cos36));
 
       const topApex = new THREE.Vector3(0, hApex, 0);
       const bottomApex = new THREE.Vector3(0, -hApex, 0);
@@ -1006,65 +1463,85 @@
       const lowerEquator = [];
 
       for (let i = 0; i < 5; i++) {
-        const angleUp = (i * 2 * Math.PI) / 5;
+        const aUp = (i * 2 * Math.PI) / 5;
         upperEquator.push(new THREE.Vector3(
-          rEquator * Math.cos(angleUp),
+          rEquator * Math.cos(aUp),
           hEquator,
-          rEquator * Math.sin(angleUp)
+          rEquator * Math.sin(aUp)
         ));
 
-        const angleLow = angleUp + Math.PI / 5;
+        const aLow = aUp + Math.PI / 5;
         lowerEquator.push(new THREE.Vector3(
-          rEquator * Math.cos(angleLow),
+          rEquator * Math.cos(aLow),
           -hEquator,
-          rEquator * Math.sin(angleLow)
+          rEquator * Math.sin(aLow)
         ));
       }
 
       const positions = [];
+      const facets = [];
 
-      // Generazione delle 5 facce superiori (aquiloni formati da TopApex, Upper[i], Lower[i], Upper[(i+4)%5])
       for (let i = 0; i < 5; i++) {
-        const nextLow = i;
-        const prevLow = (i + 4) % 5;
-        const curUp = upperEquator[i];
-        const nextUp = upperEquator[(i + 1) % 5];
-        const midLow = lowerEquator[i];
+        const topA = topApex;
+        const curU = upperEquator[i];
+        const nextU = upperEquator[(i + 1) % 5];
+        const midL = lowerEquator[i];
 
-        // Faccia superiore i: aquilone tra Top, curUp, midLow, nextUp
-        // Triangolo 1: Top, curUp, midLow
-        positions.push(topApex.x, topApex.y, topApex.z);
-        positions.push(curUp.x, curUp.y, curUp.z);
-        positions.push(midLow.x, midLow.y, midLow.z);
+        positions.push(topA.x, topA.y, topA.z);
+        positions.push(curU.x, curU.y, curU.z);
+        positions.push(midL.x, midL.y, midL.z);
 
-        // Triangolo 2: Top, midLow, nextUp
-        positions.push(topApex.x, topApex.y, topApex.z);
-        positions.push(midLow.x, midLow.y, midLow.z);
-        positions.push(nextUp.x, nextUp.y, nextUp.z);
+        positions.push(topA.x, topA.y, topA.z);
+        positions.push(midL.x, midL.y, midL.z);
+        positions.push(nextU.x, nextU.y, nextU.z);
+
+        const center = new THREE.Vector3()
+          .add(topA).add(curU).add(nextU).add(midL)
+          .multiplyScalar(0.25);
+
+        const vEdge1 = new THREE.Vector3().subVectors(curU, topA);
+        const vEdge2 = new THREE.Vector3().subVectors(midL, topA);
+        const normal = new THREE.Vector3().crossVectors(vEdge1, vEdge2).normalize();
+
+        const bitangent = new THREE.Vector3().subVectors(topA, midL).normalize();
+        const tangent = new THREE.Vector3().crossVectors(bitangent, normal).normalize();
+
+        facets.push({ center, normal, tangent, bitangent });
       }
 
-      // Generazione delle 5 facce inferiori (aquiloni formati da BottomApex, Lower[i], Upper[(i+1)%5], Lower[(i+1)%5])
       for (let i = 0; i < 5; i++) {
-        const curLow = lowerEquator[i];
-        const nextLow = lowerEquator[(i + 1) % 5];
-        const midUp = upperEquator[(i + 1) % 5];
+        const botA = bottomApex;
+        const curL = lowerEquator[i];
+        const nextL = lowerEquator[(i + 1) % 5];
+        const midU = upperEquator[(i + 1) % 5];
 
-        // Faccia inferiore i: aquilone tra Bottom, curLow, midUp, nextLow
-        // Triangolo 1: Bottom, midUp, curLow (ordine per normale esterna corretta)
-        positions.push(bottomApex.x, bottomApex.y, bottomApex.z);
-        positions.push(midUp.x, midUp.y, midUp.z);
-        positions.push(curLow.x, curLow.y, curLow.z);
+        positions.push(botA.x, botA.y, botA.z);
+        positions.push(midU.x, midU.y, midU.z);
+        positions.push(curL.x, curL.y, curL.z);
 
-        // Triangolo 2: Bottom, nextLow, midUp
-        positions.push(bottomApex.x, bottomApex.y, bottomApex.z);
-        positions.push(nextLow.x, nextLow.y, nextLow.z);
-        positions.push(midUp.x, midUp.y, midUp.z);
+        positions.push(botA.x, botA.y, botA.z);
+        positions.push(nextL.x, nextL.y, nextL.z);
+        positions.push(midU.x, midU.y, midU.z);
+
+        const center = new THREE.Vector3()
+          .add(botA).add(curL).add(nextL).add(midU)
+          .multiplyScalar(0.25);
+
+        const vEdge1 = new THREE.Vector3().subVectors(midU, botA);
+        const vEdge2 = new THREE.Vector3().subVectors(curL, botA);
+        const normal = new THREE.Vector3().crossVectors(vEdge1, vEdge2).normalize();
+
+        const bitangent = new THREE.Vector3().subVectors(botA, midU).normalize();
+        const tangent = new THREE.Vector3().crossVectors(bitangent, normal).normalize();
+
+        facets.push({ center, normal, tangent, bitangent });
       }
 
       const geom = new THREE.BufferGeometry();
       geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
       geom.computeVertexNormals();
-      return geom;
+
+      return { geometry: geom, facets };
     }
 
     function extractUniqueFacetNormals(geom, targetSides) {
@@ -1084,7 +1561,11 @@
           new THREE.Vector3().subVectors(c, a)
         ).normalize();
 
-        const tangent = new THREE.Vector3().subVectors(b, a).normalize();
+        let refAxis = new THREE.Vector3(0, 1, 0);
+        if (Math.abs(normal.dot(refAxis)) > 0.88) {
+          refAxis.set(0, 0, 1);
+        }
+        const tangent = new THREE.Vector3().crossVectors(refAxis, normal).normalize();
         const bitangent = new THREE.Vector3().crossVectors(normal, tangent).normalize();
 
         rawTriangles.push({ a, b, c, center, normal, tangent, bitangent });
@@ -1119,38 +1600,45 @@
     function assembleDieMesh(sides, targetValue, index) {
       const dieGroup = new THREE.Group();
       let geom;
+      let facets = [];
       const r = 1.35;
 
-      switch (sides) {
-        case 4:
-          geom = new THREE.TetrahedronGeometry(r * 1.35);
-          break;
-        case 6:
-          geom = new THREE.BoxGeometry(r * 1.3, r * 1.3, r * 1.3);
-          break;
-        case 8:
-          geom = new THREE.OctahedronGeometry(r * 1.25);
-          break;
-        case 10:
-          geom = createD10Geometry(r * 1.2);
-          break;
-        case 12:
-          geom = new THREE.DodecahedronGeometry(r * 1.15);
-          break;
-        case 20:
-        default:
-          geom = new THREE.IcosahedronGeometry(r * 1.25);
-          break;
+      if (sides === 10) {
+        const d10Data = createD10CompleteStructure(r * 1.25);
+        geom = d10Data.geometry;
+        facets = d10Data.facets;
+      } else {
+        switch (sides) {
+          case 4:
+            geom = new THREE.TetrahedronGeometry(r * 1.35);
+            break;
+          case 6:
+            geom = new THREE.BoxGeometry(r * 1.3, r * 1.3, r * 1.3);
+            break;
+          case 8:
+            geom = new THREE.OctahedronGeometry(r * 1.25);
+            break;
+          case 12:
+            geom = new THREE.DodecahedronGeometry(r * 1.15);
+            break;
+          case 20:
+          default:
+            geom = new THREE.IcosahedronGeometry(r * 1.25);
+            break;
+        }
+        facets = extractUniqueFacetNormals(geom, sides);
       }
 
       const baseTex = (appState.currentSkin === 'custom' && appState.customTexture) 
         ? appState.customTexture 
         : createSolidSkinTexture(appState.currentSkin);
 
+      const skinProps = getSkinMaterialProps(appState.currentSkin);
+
       const baseMat = new THREE.MeshStandardMaterial({
         map: baseTex,
-        roughness: 0.35,
-        metalness: 0.45,
+        roughness: skinProps.roughness,
+        metalness: skinProps.metalness,
         transparent: false,
         opacity: 1.0
       });
@@ -1160,17 +1648,25 @@
       bodyMesh.receiveShadow = true;
       dieGroup.add(bodyMesh);
 
-      const facets = extractUniqueFacetNormals(geom, sides);
-      const decalSize = sides === 20 ? 1.25 : (sides === 10 ? 1.20 : (sides === 12 ? 1.30 : 1.45));
+      const decalSize = sides === 20 ? 1.25 : (sides === 10 ? 1.15 : (sides === 12 ? 1.30 : 1.45));
       const shapeType = (sides === 4 || sides === 8 || sides === 20) ? 'triangle' : 'polygon';
 
       let targetFacetNormal = new THREE.Vector3(0, 1, 0);
+      let targetFacetBitangent = new THREE.Vector3(0, 0, 1);
 
       facets.forEach((facet, fIndex) => {
         const isWinning = (fIndex === 0);
-        const faceNum = isWinning ? targetValue : (((fIndex + targetValue - 1) % sides) + 1);
+        let faceNum;
+        if (sides === 10) {
+          const canonD10Order = [1, 3, 5, 7, 9, 10, 8, 6, 4, 2];
+          faceNum = isWinning ? targetValue : canonD10Order[fIndex % 10];
+        } else {
+          faceNum = isWinning ? targetValue : (((fIndex + targetValue - 1) % sides) + 1);
+        }
+
         if (isWinning) {
           targetFacetNormal = facet.normal.clone();
+          targetFacetBitangent = facet.bitangent.clone();
         }
 
         const numTex = createUltraVisibleNumberTexture(faceNum.toString(), appState.currentSkin, shapeType, isWinning);
@@ -1187,7 +1683,7 @@
         });
 
         const decalMesh = new THREE.Mesh(decalGeo, decalMat);
-        decalMesh.position.copy(facet.center).addScaledVector(facet.normal, 0.008);
+        decalMesh.position.copy(facet.center).addScaledVector(facet.normal, 0.012);
 
         const m = new THREE.Matrix4();
         m.makeBasis(facet.tangent, facet.bitangent, facet.normal);
@@ -1201,7 +1697,8 @@
         sides,
         targetValue,
         index,
-        targetFacetNormal
+        targetFacetNormal,
+        targetFacetBitangent
       };
     }
 
@@ -1224,9 +1721,16 @@
       camera = new THREE.PerspectiveCamera(38, w / h, 0.1, 100);
       updateCameraPos();
 
-      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+      const pixelRatio = Math.min(window.devicePixelRatio || 1, 1.75);
+
+      renderer = new THREE.WebGLRenderer({ 
+        antialias: true, 
+        alpha: false,
+        powerPreference: "high-performance",
+        precision: "mediump"
+      });
       renderer.setSize(w, h);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.setPixelRatio(pixelRatio);
       renderer.shadowMap.enabled = true;
       renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
@@ -1257,20 +1761,19 @@
     }
 
     function adaptCameraForDiceCount(count) {
-      // Regola la distanza della camera, il fov e l'altezza del canvas per inquadrare perfettamente sia i dadi che le nuvolette
       const container = document.getElementById('diceCanvasContainer');
       const isMobile = window.innerWidth < 768;
       const isSmallMobile = window.innerWidth < 480;
 
       if (count > 5) {
         cameraRadius = defaultCameraRadius + (count - 5) * (isSmallMobile ? 2.1 : 1.6);
-        if (container) container.style.height = isSmallMobile ? '400px' : (isMobile ? '460px' : '580px');
+        if (container) container.style.height = isSmallMobile ? '390px' : (isMobile ? '450px' : '580px');
       } else if (count > 2) {
         cameraRadius = defaultCameraRadius + (count - 2) * (isSmallMobile ? 1.4 : 1.0);
-        if (container) container.style.height = isSmallMobile ? '380px' : (isMobile ? '430px' : '540px');
+        if (container) container.style.height = isSmallMobile ? '370px' : (isMobile ? '420px' : '540px');
       } else {
         cameraRadius = defaultCameraRadius + (isSmallMobile ? 1.2 : 0);
-        if (container) container.style.height = isSmallMobile ? '360px' : (isMobile ? '410px' : '500px');
+        if (container) container.style.height = isSmallMobile ? '350px' : (isMobile ? '400px' : '500px');
       }
 
       if (camera) {
@@ -1283,23 +1786,23 @@
 
     function createTavernFloorTexture() {
       const cv = document.createElement('canvas');
-      cv.width = 1024; cv.height = 1024;
+      cv.width = 512; cv.height = 512;
       const ctx = cv.getContext('2d');
 
       ctx.fillStyle = '#2b180d';
-      ctx.fillRect(0, 0, 1024, 1024);
+      ctx.fillRect(0, 0, 512, 512);
 
-      const plankCount = 7;
-      const plankH = 1024 / plankCount;
+      const plankCount = 6;
+      const plankH = 512 / plankCount;
 
       for (let p = 0; p < plankCount; p++) {
         const yTop = p * plankH;
         const toneShift = (Math.sin(p * 3.7) * 12);
         ctx.fillStyle = `rgb(${46 + toneShift}, ${26 + (toneShift * 0.5)}, ${14 + (toneShift * 0.2)})`;
-        ctx.fillRect(0, yTop, 1024, plankH);
+        ctx.fillRect(0, yTop, 512, plankH);
 
         ctx.lineWidth = 1.5;
-        for (let j = 0; j < 55; j++) {
+        for (let j = 0; j < 35; j++) {
           const yLocal = yTop + Math.random() * plankH;
           const alpha = 0.04 + Math.random() * 0.12;
           ctx.strokeStyle = Math.random() > 0.4 ? `rgba(18, 9, 4, ${alpha})` : `rgba(120, 75, 40, ${alpha * 0.8})`;
@@ -1307,49 +1810,15 @@
           ctx.beginPath();
           ctx.moveTo(0, yLocal);
           ctx.bezierCurveTo(
-            260, yLocal + (Math.random() - 0.5) * 20,
-            680, yLocal + (Math.random() - 0.5) * 20,
-            1024, yLocal + (Math.random() - 0.5) * 8
+            130, yLocal + (Math.random() - 0.5) * 12,
+            340, yLocal + (Math.random() - 0.5) * 12,
+            512, yLocal + (Math.random() - 0.5) * 6
           );
           ctx.stroke();
         }
 
-        if (p % 2 === 1) {
-          const kx = 220 + (p * 110) % 580;
-          const ky = yTop + plankH * 0.5;
-          ctx.fillStyle = 'rgba(15, 7, 3, 0.45)';
-          ctx.beginPath();
-          ctx.ellipse(kx, ky, 24, 14, Math.PI / 12, 0, Math.PI * 2);
-          ctx.fill();
-
-          ctx.strokeStyle = 'rgba(70, 40, 20, 0.35)';
-          for (let r = 20; r <= 55; r += 9) {
-            ctx.beginPath();
-            ctx.ellipse(kx, ky, r, r * 0.65, Math.PI / 12, 0, Math.PI * 2);
-            ctx.stroke();
-          }
-        }
-
-        [35, 989].forEach(nx => {
-          const ny = yTop + plankH * 0.5;
-          ctx.fillStyle = 'rgba(0,0,0,0.6)';
-          ctx.beginPath();
-          ctx.arc(nx + 2, ny + 2, 7, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.fillStyle = '#1c1b18';
-          ctx.beginPath();
-          ctx.arc(nx, ny, 6, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.fillStyle = 'rgba(255,255,255,0.35)';
-          ctx.beginPath();
-          ctx.arc(nx - 2, ny - 2, 2, 0, Math.PI * 2);
-          ctx.fill();
-        });
-
         ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
-        ctx.fillRect(0, yTop + plankH - 3, 1024, 3);
-        ctx.fillStyle = 'rgba(160, 110, 65, 0.18)';
-        ctx.fillRect(0, yTop + 1, 1024, 1.5);
+        ctx.fillRect(0, yTop + plankH - 2, 512, 2);
       }
 
       const tex = new THREE.CanvasTexture(cv);
@@ -1360,49 +1829,26 @@
 
     function createCryptFloorTexture() {
       const cv = document.createElement('canvas');
-      cv.width = 1024; cv.height = 1024;
+      cv.width = 512; cv.height = 512;
       const ctx = cv.getContext('2d');
 
       ctx.fillStyle = '#151921';
-      ctx.fillRect(0, 0, 1024, 1024);
+      ctx.fillRect(0, 0, 512, 512);
 
-      const rows = 6; const cols = 6;
-      const tw = 1024 / cols; const th = 1024 / rows;
+      const rows = 5; const cols = 5;
+      const tw = 512 / cols; const th = 512 / rows;
 
       for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
           const shift = (r % 2 === 0) ? 0 : tw * 0.5;
-          const x = (c * tw + shift) % 1024;
+          const x = (c * tw + shift) % 512;
           const y = r * th;
 
           const randLum = Math.floor((Math.sin(r * 4.3 + c * 2.1) + 1) * 8);
           ctx.fillStyle = `rgb(${26 + randLum}, ${30 + randLum}, ${38 + randLum})`;
           ctx.fillRect(x + 2, y + 2, tw - 4, th - 4);
-
-          ctx.fillStyle = 'rgba(255, 255, 255, 0.035)';
-          for (let p = 0; p < 80; p++) {
-            const px = x + 4 + Math.random() * (tw - 8);
-            const py = y + 4 + Math.random() * (th - 8);
-            ctx.fillRect(px, py, 2, 2);
-          }
-
-          if ((r + c) % 3 === 0) {
-            ctx.strokeStyle = 'rgba(8, 10, 14, 0.8)';
-            ctx.lineWidth = 1.6;
-            ctx.beginPath();
-            let cx = x + tw * 0.3;
-            let cy = y + th * 0.2;
-            ctx.moveTo(cx, cy);
-            for (let s = 0; s < 4; s++) {
-              cx += (Math.random() - 0.5) * 35;
-              cy += 15 + Math.random() * 20;
-              ctx.lineTo(cx, cy);
-            }
-            ctx.stroke();
-          }
-
           ctx.strokeStyle = 'rgba(5, 7, 10, 0.9)';
-          ctx.lineWidth = 4;
+          ctx.lineWidth = 3;
           ctx.strokeRect(x + 2, y + 2, tw - 4, th - 4);
         }
       }
@@ -1412,147 +1858,69 @@
 
     function createAltarFloorTexture() {
       const cv = document.createElement('canvas');
-      cv.width = 1024; cv.height = 1024;
+      cv.width = 512; cv.height = 512;
       const ctx = cv.getContext('2d');
 
-      const bgGrad = ctx.createRadialGradient(512, 512, 50, 512, 512, 600);
+      const bgGrad = ctx.createRadialGradient(256, 256, 30, 256, 256, 300);
       bgGrad.addColorStop(0, '#130922');
       bgGrad.addColorStop(0.65, '#0c0517');
       bgGrad.addColorStop(1, '#05020a');
       ctx.fillStyle = bgGrad;
-      ctx.fillRect(0, 0, 1024, 1024);
+      ctx.fillRect(0, 0, 512, 512);
 
-      const cx = 512; const cy = 512;
+      const cx = 256; const cy = 256;
 
       ctx.shadowColor = '#a855f7';
-      ctx.shadowBlur = 35;
+      ctx.shadowBlur = 20;
       ctx.strokeStyle = '#c084fc';
-      ctx.lineWidth = 4;
+      ctx.lineWidth = 3;
       ctx.beginPath();
-      ctx.arc(cx, cy, 380, 0, Math.PI * 2);
+      ctx.arc(cx, cy, 190, 0, Math.PI * 2);
       ctx.stroke();
 
       ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.arc(cx, cy, 350, 0, Math.PI * 2);
+      ctx.arc(cx, cy, 110, 0, Math.PI * 2);
       ctx.stroke();
-
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.arc(cx, cy, 210, 0, Math.PI * 2);
-      ctx.stroke();
-
-      ctx.shadowBlur = 20;
-      ctx.strokeStyle = 'rgba(216, 180, 254, 0.85)';
-      ctx.lineWidth = 3;
-      for (let rot = 0; rot < 2; rot++) {
-        ctx.save();
-        ctx.translate(cx, cy);
-        ctx.rotate((Math.PI / 4) * rot);
-        ctx.strokeRect(-210, -210, 420, 420);
-        ctx.restore();
-      }
-
-      ctx.shadowBlur = 15;
-      ctx.fillStyle = '#f3e8ff';
-      ctx.font = 'bold 22px serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      const runes = ['ᚦ', 'ᚱ', 'ᚲ', 'ᚷ', 'ᚹ', 'ᚺ', 'ᛃ', 'ᛈ', 'ᛉ', 'ᛋ', 'ᛏ', 'ᛒ', 'ᛖ', 'ᛗ', 'ᛚ', 'ᛞ'];
-      for (let i = 0; i < 16; i++) {
-        const angle = (i * Math.PI * 2) / 16;
-        const rx = cx + Math.cos(angle) * 365;
-        const ry = cy + Math.sin(angle) * 365;
-        ctx.save();
-        ctx.translate(rx, ry);
-        ctx.rotate(angle + Math.PI / 2);
-        ctx.fillText(runes[i % runes.length], 0, 0);
-        ctx.restore();
-      }
-
-      ctx.beginPath();
-      ctx.arc(cx, cy, 35, 0, Math.PI * 2);
-      ctx.fillStyle = '#d8b4fe';
-      ctx.fill();
 
       return new THREE.CanvasTexture(cv);
     }
 
     function createSteampunkFloorTexture() {
       const cv = document.createElement('canvas');
-      cv.width = 1024; cv.height = 1024;
+      cv.width = 512; cv.height = 512;
       const ctx = cv.getContext('2d');
 
-      const metGrad = ctx.createRadialGradient(512, 512, 80, 512, 512, 680);
+      const metGrad = ctx.createRadialGradient(256, 256, 40, 256, 256, 340);
       metGrad.addColorStop(0, '#5a3418');
       metGrad.addColorStop(0.45, '#3e2312');
       metGrad.addColorStop(1, '#150b06');
       ctx.fillStyle = metGrad;
-      ctx.fillRect(0, 0, 1024, 1024);
+      ctx.fillRect(0, 0, 512, 512);
 
       ctx.shadowColor = '#f97316';
-      ctx.shadowBlur = 18;
+      ctx.shadowBlur = 12;
       ctx.strokeStyle = 'rgba(249, 115, 22, 0.45)';
-      ctx.lineWidth = 4;
+      ctx.lineWidth = 3;
       ctx.beginPath();
-      ctx.moveTo(512, 0); ctx.lineTo(512, 1024);
-      ctx.moveTo(0, 512); ctx.lineTo(1024, 512);
+      ctx.moveTo(256, 0); ctx.lineTo(256, 512);
+      ctx.moveTo(0, 256); ctx.lineTo(512, 256);
       ctx.stroke();
-      ctx.shadowBlur = 0;
-
-      function drawDetailedGear(gx, gy, radius, teeth, toothH, colorMain, colorRim) {
-        ctx.save();
-        ctx.translate(gx, gy);
-        ctx.fillStyle = colorMain;
-        ctx.strokeStyle = colorRim;
-        ctx.lineWidth = 3;
-
-        ctx.beginPath();
-        const step = (Math.PI * 2) / teeth;
-        for (let i = 0; i < teeth; i++) {
-          const a = i * step;
-          const aMid1 = a + step * 0.22;
-          const aMid2 = a + step * 0.48;
-          const aEnd = a + step * 0.70;
-          ctx.lineTo(Math.cos(a) * radius, Math.sin(a) * radius);
-          ctx.lineTo(Math.cos(aMid1) * (radius + toothH), Math.sin(aMid1) * (radius + toothH));
-          ctx.lineTo(Math.cos(aMid2) * (radius + toothH), Math.sin(aMid2) * (radius + toothH));
-          ctx.lineTo(Math.cos(aEnd) * radius, Math.sin(aEnd) * radius);
-        }
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-
-        ctx.beginPath();
-        ctx.arc(0, 0, radius * 0.32, 0, Math.PI * 2);
-        ctx.fillStyle = '#b45309';
-        ctx.fill();
-        ctx.stroke();
-        ctx.restore();
-      }
-
-      drawDetailedGear(512, 512, 210, 22, 26, '#9a6728', '#fef08a');
-      drawDetailedGear(270, 270, 130, 16, 20, '#b45309', '#fde047');
-      drawDetailedGear(760, 480, 115, 14, 18, '#784618', '#f59e0b');
 
       return new THREE.CanvasTexture(cv);
     }
 
     function createFeltFloorTexture() {
       const cv = document.createElement('canvas');
-      cv.width = 1024; cv.height = 1024;
+      cv.width = 512; cv.height = 512;
       const ctx = cv.getContext('2d');
 
       ctx.fillStyle = '#0a3d28';
-      ctx.fillRect(0, 0, 1024, 1024);
+      ctx.fillRect(0, 0, 512, 512);
 
       ctx.strokeStyle = '#d4af37';
-      ctx.lineWidth = 6;
-      ctx.strokeRect(60, 60, 904, 904);
-
-      ctx.strokeStyle = 'rgba(212, 175, 55, 0.6)';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(74, 74, 876, 876);
+      ctx.lineWidth = 4;
+      ctx.strokeRect(30, 30, 452, 452);
 
       return new THREE.CanvasTexture(cv);
     }
@@ -1700,11 +2068,44 @@
     }
 
     function updateCameraPos() {
+      if (!camera) return;
       const x = cameraRadius * Math.sin(cameraAngle.phi) * Math.sin(cameraAngle.theta);
       const y = cameraRadius * Math.cos(cameraAngle.phi);
       const z = cameraRadius * Math.sin(cameraAngle.phi) * Math.cos(cameraAngle.theta);
       camera.position.set(x, Math.max(6, y), z);
       camera.lookAt(0, 0, 0);
+    }
+
+    function computeFacingQuat(die) {
+      const camDir = new THREE.Vector3().subVectors(camera.position, die.mesh.position).normalize();
+      const camUp = new THREE.Vector3(0, 1, 0).applyQuaternion(camera.quaternion).normalize();
+
+      const worldNormal = camDir.clone();
+      const worldRight = new THREE.Vector3().crossVectors(camUp, worldNormal).normalize();
+      const worldUp = new THREE.Vector3().crossVectors(worldNormal, worldRight).normalize();
+
+      const localNormal = die.targetFacetNormal.clone().normalize();
+      const localUp = (die.targetFacetBitangent && die.targetFacetBitangent.lengthSq() > 0.1) 
+        ? die.targetFacetBitangent.clone().normalize()
+        : new THREE.Vector3(0, 1, 0);
+
+      const localRight = new THREE.Vector3().crossVectors(localUp, localNormal).normalize();
+      const orthoLocalUp = new THREE.Vector3().crossVectors(localNormal, localRight).normalize();
+
+      const mLocal = new THREE.Matrix4().makeBasis(localRight, orthoLocalUp, localNormal);
+      const mWorld = new THREE.Matrix4().makeBasis(worldRight, worldUp, worldNormal);
+
+      const invLocal = new THREE.Matrix4().copy(mLocal).invert();
+      const targetMatrix = new THREE.Matrix4().multiplyMatrices(mWorld, invLocal);
+      return new THREE.Quaternion().setFromRotationMatrix(targetMatrix);
+    }
+
+    function updateDiceFacingCamera() {
+      if (appState.isRolling || dice3D.length === 0) return;
+      dice3D.forEach(d => {
+        const lookQuat = computeFacingQuat(d);
+        d.mesh.quaternion.slerp(lookQuat, 0.15);
+      });
     }
 
     function setupControls(el) {
@@ -1719,6 +2120,7 @@
         cameraAngle.theta -= dx * 0.008;
         cameraAngle.phi = Math.max(0.3, Math.min(1.35, cameraAngle.phi + dy * 0.008));
         updateCameraPos();
+        updateDiceFacingCamera();
         mouseLast = { x: cx, y: cy };
       };
       const onEnd = () => { isInteracting = false; };
@@ -1734,6 +2136,7 @@
         if (isInteracting && e.touches.length === 1) onMove(e.touches[0].clientX, e.touches[0].clientY);
       }, { passive: true });
       window.addEventListener('touchend', onEnd);
+      window.addEventListener('touchcancel', onEnd);
     }
 
     function onResize() {
@@ -1741,6 +2144,7 @@
       if (!container || !renderer || !camera) return;
       const w = container.clientWidth || 800;
       const h = container.clientHeight || 450;
+      if (w === 0 || h === 0) return;
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
       renderer.setSize(w, h);
@@ -1748,7 +2152,9 @@
 
     function animateLoop() {
       requestAnimationFrame(animateLoop);
-      renderer.render(scene, camera);
+      if (renderer && scene && camera) {
+        renderer.render(scene, camera);
+      }
       updateBadgeProjection();
     }
 
@@ -1759,6 +2165,7 @@
 
       const w = container.clientWidth;
       const h = container.clientHeight;
+      if (w === 0 || h === 0) return;
 
       dice3D.forEach((d) => {
         const badge = document.getElementById(`dieBadge_${d.index}`);
@@ -1766,7 +2173,7 @@
 
         const p = new THREE.Vector3();
         d.mesh.getWorldPosition(p);
-        p.y += 2.15; // Quota subito sopra il dado
+        p.y += 2.15;
         p.project(camera);
 
         if (p.z > 1) {
@@ -1774,13 +2181,11 @@
           return;
         }
 
-        // Calcolo coordinate schermo
         let sx = (p.x * 0.5 + 0.5) * w;
         let sy = (-p.y * 0.5 + 0.5) * h;
 
-        // Limiti (clamping) di sicurezza con margine per evitare tagli a bordo schermo
-        const padX = 38;
-        const padYTop = 45; // Evita che esca in alto
+        const padX = 35;
+        const padYTop = 40;
         const padYBottom = 15;
 
         sx = Math.max(padX, Math.min(w - padX, sx));
@@ -1792,17 +2197,178 @@
       });
     }
 
+    function addRollToHistory(results, total, player) {
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+      const entry = {
+        time: timeStr,
+        playerName: player.name,
+        playerColor: player.color,
+        diceBreakdown: results.map(r => ({ sides: r.sides, val: r.value, isCrit: r.value === r.sides })),
+        total: total,
+        round: appState.currentRound
+      };
+
+      appState.rollHistory.unshift(entry);
+      if (appState.rollHistory.length > 25) appState.rollHistory.pop();
+      renderRollHistory();
+    }
+
+    function renderRollHistory() {
+      const container = document.getElementById('historyRowsContainer');
+      const badge = document.getElementById('historyCountBadge');
+      if (!container) return;
+
+      if (badge) badge.textContent = `${appState.rollHistory.length} tiri`;
+
+      if (appState.rollHistory.length === 0) {
+        container.innerHTML = `<div class="text-slate-500 text-center py-2.5 italic text-[11px]">Nessun lancio registrato in questa sessione.</div>`;
+        return;
+      }
+
+      container.innerHTML = '';
+      appState.rollHistory.forEach(item => {
+        const row = document.createElement('div');
+        row.className = 'flex items-center justify-between p-1.5 sm:p-2 rounded-xl bg-slate-900/80 border border-slate-800 text-[11px]';
+
+        const dicePills = item.diceBreakdown.map(d => {
+          return `<span class="px-1.5 py-0.5 rounded font-mono font-bold ${
+            d.isCrit ? 'bg-amber-400 text-slate-950 shadow-sm' : 'bg-slate-800 text-slate-300'
+          }" title="D${d.sides}: ${d.val}">${d.val}</span>`;
+        }).join(' ');
+
+        row.innerHTML = `
+          <div class="flex items-center gap-1.5 truncate">
+            <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background-color: ${item.playerColor};"></span>
+            <span class="font-bold text-white truncate max-w-[80px] sm:max-w-[130px]">${item.playerName}</span>
+            <span class="text-slate-500 font-mono text-[9px] hidden xs:inline">${item.time}</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <div class="flex items-center gap-1">${dicePills}</div>
+            <span class="text-[11px] sm:text-xs font-fun font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">= ${item.total}</span>
+          </div>
+        `;
+        container.appendChild(row);
+      });
+    }
+
+    function toggleHistoryCollapse() {
+      const box = document.getElementById('historyRowsContainer');
+      const icon = document.getElementById('historyToggleIcon');
+      if (!box || !icon) return;
+
+      appState.historyCollapsed = !appState.historyCollapsed;
+      if (appState.historyCollapsed) {
+        box.classList.add('hidden');
+        icon.className = 'fa-solid fa-chevron-down';
+      } else {
+        box.classList.remove('hidden');
+        icon.className = 'fa-solid fa-chevron-up';
+      }
+    }
+
+    function clearRollHistory() {
+      appState.rollHistory = [];
+      renderRollHistory();
+    }
+
+    function showChallengeVictoryModal() {
+      const modal = document.getElementById('challengeVictoryModal');
+      const rankingsContainer = document.getElementById('victoryRankingsList');
+      const winnerTitle = document.getElementById('victoryWinnerTitle');
+      const subTitle = document.getElementById('victorySubtitle');
+      if (!modal || !rankingsContainer) return;
+
+      triggerHaptic('crit');
+
+      const sorted = [...appState.players].sort((a, b) => b.totalScore - a.totalScore);
+      const winner = sorted[0];
+      const isTie = sorted.length > 1 && sorted[0].totalScore === sorted[1].totalScore;
+
+      if (isTie) {
+        if (winnerTitle) winnerTitle.textContent = "Pareggio Epico!";
+        if (subTitle) subTitle.textContent = `I vincitori hanno totalizzato entrambi ${winner.totalScore} punti!`;
+      } else {
+        if (winnerTitle) winnerTitle.textContent = `Vince ${winner.name}! 👑`;
+        if (subTitle) subTitle.textContent = `Campione dopo ${appState.targetRounds} Round con ${winner.totalScore} punti!`;
+      }
+
+      rankingsContainer.innerHTML = '';
+      sorted.forEach((p, rank) => {
+        const item = document.createElement('div');
+        const isFirst = rank === 0;
+        const medalEmoji = rank === 0 ? '🥇' : (rank === 1 ? '🥈' : (rank === 2 ? '🥉' : `#${rank + 1}`));
+        item.className = `p-2.5 rounded-xl border flex items-center justify-between text-xs ${
+          isFirst ? 'bg-amber-500/20 border-amber-400/80 shadow-md' : 'bg-slate-900/80 border-slate-800'
+        }`;
+
+        item.innerHTML = `
+          <div class="flex items-center gap-2 truncate">
+            <span class="text-base font-bold">${medalEmoji}</span>
+            <span class="w-3 h-3 rounded-full shrink-0" style="background-color: ${p.color};"></span>
+            <div class="text-left truncate">
+              <span class="font-bold text-white block truncate">${p.name}</span>
+              <span class="text-[9px] text-slate-400">Media: ${Math.round(p.totalScore / (p.rollsCount || 1))} pts/rnd</span>
+            </div>
+          </div>
+          <div class="text-right shrink-0">
+            <span class="text-sm sm:text-base font-fun font-bold text-amber-400">${p.totalScore}</span>
+            <span class="text-[9px] text-slate-400 block uppercase">Punti</span>
+          </div>
+        `;
+        rankingsContainer.appendChild(item);
+      });
+
+      modal.classList.remove('hidden');
+    }
+
+    function restartRematch() {
+      const modal = document.getElementById('challengeVictoryModal');
+      if (modal) modal.classList.add('hidden');
+
+      appState.players.forEach(p => {
+        p.totalScore = 0;
+        p.lastRoll = 0;
+        p.rollsCount = 0;
+        p.roundHistory = [];
+      });
+      appState.currentPlayerIndex = 0;
+      appState.currentRound = 1;
+      appState.challengeFinished = false;
+
+      updateTurnUI();
+      renderScoreboard();
+      triggerRollSequence();
+    }
+
+    function closeVictoryModalAndReset() {
+      const modal = document.getElementById('challengeVictoryModal');
+      if (modal) modal.classList.add('hidden');
+
+      appState.players.forEach(p => {
+        p.totalScore = 0;
+        p.lastRoll = 0;
+        p.rollsCount = 0;
+        p.roundHistory = [];
+      });
+      appState.currentPlayerIndex = 0;
+      appState.currentRound = 1;
+      appState.challengeFinished = false;
+
+      showConfigScreen();
+    }
+
     function triggerRollSequence() {
       if (appState.isRolling) return;
       appState.isRolling = true;
 
-      // 1. Mostra istantaneamente l'arena e adatta la finestra grafica prima di generare la caduta
       showArenaScreen();
 
       dice3D.forEach(d => scene.remove(d.mesh));
       dice3D = [];
       const overlay = document.getElementById('labelsOverlay');
-      overlay.innerHTML = '';
+      if (overlay) overlay.innerHTML = '';
 
       const list = [];
       if (appState.mode === 'same') {
@@ -1820,7 +2386,6 @@
       }));
       appState.currentRolls = results;
 
-      // Distribuzione su 1 o 2 file se ci sono molti dadi (es. 5-10 dadi) per evitare che si sovrappongano o escano dal vassoio
       const count = results.length;
       const useDoubleRow = count > 5;
       const row1Count = useDoubleRow ? Math.ceil(count / 2) : count;
@@ -1853,32 +2418,29 @@
           }
         }
 
-        // Quota di caduta ben visibile all'interno della camera
         mesh.position.set(targetX, 10.5 + Math.random() * 2, targetZ);
         mesh.rotation.set(Math.random() * Math.PI * 4, Math.random() * Math.PI * 4, Math.random() * Math.PI * 4);
 
         scene.add(mesh);
 
-        const badge = document.createElement('div');
-        badge.id = `dieBadge_${i}`;
-        badge.className = 'die-float-badge opacity-0';
-        badge.innerHTML = `
-          <div class="die-float-pill">
-            <span class="text-[10px] text-amber-400 font-mono">${dieData.sides === 20 ? 'D20' : 'D' + dieData.sides}</span>
-            <span class="text-xl font-fun font-bold leading-none text-white">${r.value}</span>
-          </div>
-          <div class="die-float-pin"></div>
-        `;
-        overlay.appendChild(badge);
-
-        const targetWorldDir = new THREE.Vector3(0, 0.94, 0.34).normalize();
-        const targetQuat = new THREE.Quaternion().setFromUnitVectors(dieData.targetFacetNormal, targetWorldDir);
+        if (overlay) {
+          const badge = document.createElement('div');
+          badge.id = `dieBadge_${i}`;
+          badge.className = 'die-float-badge opacity-0';
+          badge.innerHTML = `
+            <div class="die-float-pill">
+              <span class="text-[10px] text-amber-400 font-mono">${dieData.sides === 20 ? 'D20' : 'D' + dieData.sides}</span>
+              <span class="text-xl font-fun font-bold leading-none text-white">${r.value}</span>
+            </div>
+            <div class="die-float-pin"></div>
+          `;
+          overlay.appendChild(badge);
+        }
 
         dice3D.push({
           ...dieData,
           targetPos: new THREE.Vector3(targetX, 1.15, targetZ),
-          hoverPos: new THREE.Vector3(targetX, 2.5, targetZ), // Quota ottimizzata per mantenere il badge nello schermo
-          targetQuat,
+          hoverPos: new THREE.Vector3(targetX, 2.5, targetZ),
           vy: -0.28,
           rotSpeed: {
             x: (Math.random() - 0.5) * 0.45,
@@ -1894,11 +2456,15 @@
       });
 
       const statePill = document.getElementById('rollingStatePill');
-      statePill.className = 'px-3 py-1 rounded-full font-bold uppercase tracking-wider bg-rose-500/20 text-rose-300 border border-rose-500/30 flex items-center gap-2';
-      statePill.innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-400 animate-ping"></span> I dadi stanno rotolando nel vassoio...`;
+      if (statePill) {
+        statePill.className = 'px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider bg-rose-500/20 text-rose-300 border border-rose-500/30 flex items-center gap-1.5';
+        statePill.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-rose-400 animate-ping"></span> Lancio in corso...`;
+      }
 
-      document.getElementById('valTotalSum').textContent = '...';
-      document.getElementById('polyhedralResultsGrid').innerHTML = '';
+      const sumEl = document.getElementById('valTotalSum');
+      if (sumEl) sumEl.textContent = '...';
+      const grid = document.getElementById('polyhedralResultsGrid');
+      if (grid) grid.innerHTML = '';
 
       let lastClackTime = 0;
       const startTime = performance.now();
@@ -1918,6 +2484,7 @@
             if (d.mesh.position.y <= d.targetPos.y) {
               d.mesh.position.y = d.targetPos.y;
               d.bounces++;
+              triggerHaptic('bounce');
 
               if (d.bounces === 1) {
                 playSynchronizedResinHit(1.0, d.pitchOffset);
@@ -1968,7 +2535,6 @@
     function startHoverShowcase(results) {
       concludeRoll(results);
 
-      const showcaseStart = performance.now();
       if (showcaseAnimId) cancelAnimationFrame(showcaseAnimId);
 
       function hoverLoop(time) {
@@ -1977,46 +2543,13 @@
         const timeSec = time * 0.001;
 
         dice3D.forEach((d) => {
-          // 1. Direzione precisa dal dado verso la telecamera
-          const camDir = new THREE.Vector3().subVectors(camera.position, d.mesh.position).normalize();
-          
-          // 2. Vettore UP della telecamera nel mondo
-          const camUp = new THREE.Vector3(0, 1, 0).applyQuaternion(camera.quaternion).normalize();
+          const lookQuat = computeFacingQuat(d);
 
-          // Costruiamo una base ortonormale locale per la faccia vincente:
-          // d.targetFacetNormal è la normale della faccia vincente nello spazio locale del dado.
-          // Troviamo un vettore 'up' locale sulla faccia per mantenerlo dritto verso l'alto dello schermo.
-          let localUp = new THREE.Vector3(0, 1, 0);
-          if (Math.abs(d.targetFacetNormal.dot(localUp)) > 0.88) {
-            // Se la normale è quasi parallela a Y, usiamo Z come riferimento secondario
-            localUp = new THREE.Vector3(0, 0, 1);
-          }
-          const localRight = new THREE.Vector3().crossVectors(localUp, d.targetFacetNormal).normalize();
-          localUp.crossVectors(d.targetFacetNormal, localRight).normalize();
-
-          // Base desiderata nello spazio mondo:
-          // La normale locale deve puntare verso camDir
-          // Il localUp deve puntare verso camUp (o la sua proiezione perpendicolare a camDir)
-          const worldNormal = camDir.clone();
-          const worldRight = new THREE.Vector3().crossVectors(camUp, worldNormal).normalize();
-          const worldUp = new THREE.Vector3().crossVectors(worldNormal, worldRight).normalize();
-
-          // Matrice di rotazione locale del dado -> Matrice di rotazione mondo desiderata
-          const mLocal = new THREE.Matrix4().makeBasis(localRight, localUp, d.targetFacetNormal);
-          const mWorld = new THREE.Matrix4().makeBasis(worldRight, worldUp, worldNormal);
-
-          // R_mesh * mLocal = mWorld  =>  R_mesh = mWorld * (mLocal)^-1
-          const invLocal = new THREE.Matrix4().copy(mLocal).invert();
-          const targetMatrix = new THREE.Matrix4().multiplyMatrices(mWorld, invLocal);
-          const lookQuat = new THREE.Quaternion().setFromRotationMatrix(targetMatrix);
-
-          // 3. Transizione fluida e naturale verso la quota di galleggiamento
           const hoverY = d.baseY + Math.sin(timeSec * 2.0 + d.floatPhase) * 0.18;
           d.mesh.position.y += (hoverY - d.mesh.position.y) * 0.06;
           d.mesh.position.x += (d.hoverPos.x - d.mesh.position.x) * 0.06;
           d.mesh.position.z += (d.hoverPos.z - d.mesh.position.z) * 0.06;
 
-          // 4. Rotazione dolce e continua per mantenere la faccia frontale e dritta rispetto agli occhi del giocatore
           d.mesh.quaternion.slerp(lookQuat, 0.08);
         });
 
@@ -2030,53 +2563,87 @@
       appState.isRolling = false;
       const total = results.reduce((a, b) => a + b.value, 0);
 
+      const hasCrit = results.some(r => r.value === r.sides);
+      triggerHaptic(hasCrit ? 'crit' : 'settle');
+
       const statePill = document.getElementById('rollingStatePill');
-      statePill.className = 'px-3 py-1 rounded-full font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1.5';
-      statePill.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-400"></i> Risultati Convalidati`;
-
-      document.getElementById('valTotalSum').textContent = total;
-
-      if (appState.playerCount > 1) {
-        const curPlayer = appState.players[appState.currentPlayerIndex];
-        if (curPlayer) {
-          curPlayer.lastRoll = total;
-          curPlayer.totalScore += total;
-          curPlayer.rollsCount++;
-        }
-
-        appState.currentPlayerIndex++;
-        if (appState.currentPlayerIndex >= appState.playerCount) {
-          appState.currentPlayerIndex = 0;
-          appState.currentRound++;
-        }
-        updateTurnUI();
-        renderScoreboard();
+      if (statePill) {
+        statePill.className = 'px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1.5';
+        statePill.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-400"></i> Risultati Convalidati`;
       }
 
-      const grid = document.getElementById('polyhedralResultsGrid');
-      grid.innerHTML = '';
+      const sumEl = document.getElementById('valTotalSum');
+      if (sumEl) sumEl.textContent = total;
 
-      results.forEach((res, i) => {
-        const card = document.createElement('div');
-        const isCrit = res.value === res.sides;
-        card.className = `result-poly-card p-3 rounded-2xl flex flex-col items-center text-center ${isCrit ? 'border-amber-400 bg-amber-500/10' : ''}`;
-        card.innerHTML = `
-          <div class="text-[11px] font-bold text-slate-400">Dado ${i + 1}</div>
-          <div class="text-xs font-bold text-amber-400 mb-1">D${res.sides}</div>
-          <div class="text-3xl font-fun font-bold text-white leading-tight">${res.value}</div>
-          <div class="text-[10px] text-slate-500 mt-0.5">${isCrit ? '⭐ MAX' : 'su ' + res.sides + ' facce'}</div>
-        `;
-        grid.appendChild(card);
-      });
+      const rollingPlayer = appState.players[appState.currentPlayerIndex] || appState.players[0];
+
+      if (appState.playerCount > 1) {
+        if (rollingPlayer) {
+          rollingPlayer.lastRoll = total;
+          rollingPlayer.totalScore += total;
+          rollingPlayer.rollsCount++;
+          if (!rollingPlayer.roundHistory) rollingPlayer.roundHistory = [];
+          rollingPlayer.roundHistory.push(total);
+        }
+
+        const isLastPlayerInRound = (appState.currentPlayerIndex === appState.playerCount - 1);
+        const isLastRoundOfChallenge = (appState.gameMode === 'challenge' && appState.currentRound >= appState.targetRounds && isLastPlayerInRound);
+
+        if (isLastRoundOfChallenge) {
+          appState.challengeFinished = true;
+          updateTurnUI();
+          renderScoreboard();
+          setTimeout(() => {
+            showChallengeVictoryModal();
+          }, 800);
+        } else {
+          appState.currentPlayerIndex++;
+          if (appState.currentPlayerIndex >= appState.playerCount) {
+            appState.currentPlayerIndex = 0;
+            appState.currentRound++;
+          }
+          updateTurnUI();
+          renderScoreboard();
+        }
+      } else {
+        if (rollingPlayer) {
+          rollingPlayer.lastRoll = total;
+          rollingPlayer.totalScore += total;
+          rollingPlayer.rollsCount++;
+        }
+      }
+
+      addRollToHistory(results, total, rollingPlayer);
+
+      const grid = document.getElementById('polyhedralResultsGrid');
+      if (grid) {
+        grid.innerHTML = '';
+        results.forEach((res, i) => {
+          const card = document.createElement('div');
+          const isCrit = res.value === res.sides;
+          card.className = `result-poly-card p-2.5 rounded-2xl flex flex-col items-center text-center ${isCrit ? 'border-amber-400 bg-amber-500/10' : ''}`;
+          card.innerHTML = `
+            <div class="text-[10px] font-bold text-slate-400">Dado ${i + 1}</div>
+            <div class="text-xs font-bold text-amber-400 mb-0.5">D${res.sides}</div>
+            <div class="text-2xl sm:text-3xl font-fun font-bold text-white leading-tight">${res.value}</div>
+            <div class="text-[9px] text-slate-500 mt-0.5">${isCrit ? '⭐ MAX' : 'su ' + res.sides}</div>
+          `;
+          grid.appendChild(card);
+        });
+      }
 
       updateBadgeProjection();
     }
 
-    function showConfigScreen() {
+    function showConfigScreen(pushToHistory = true) {
       document.getElementById('configPanel').classList.remove('hidden');
       document.getElementById('arenaPanel').classList.add('hidden');
       playActiveMusic();
       window.scrollTo({ top: 0, behavior: 'smooth' });
+
+      if (pushToHistory && window.history) {
+        history.pushState({ screen: 'config' }, '');
+      }
     }
 
     function showArenaScreen() {
@@ -2084,6 +2651,7 @@
       const arena = document.getElementById('arenaPanel');
       arena.classList.remove('hidden');
 
+      updateArenaButtonsForGameMode();
       playActiveMusic();
 
       onResize();
@@ -2091,7 +2659,10 @@
         renderer.render(scene, camera);
       }
 
-      // Su schermi mobili e Android porta subito in vista l'inizio dell'arena e del vassoio
+      if (window.history) {
+        history.pushState({ screen: 'arena' }, '');
+      }
+
       requestAnimationFrame(() => {
         onResize();
         if (renderer && scene && camera) {
@@ -2132,13 +2703,13 @@
       const custWrap = document.getElementById('customFacesWrap');
 
       if (mode === 'same') {
-        sameTab.className = 'px-2.5 py-1 rounded-lg bg-indigo-600 text-white font-semibold';
-        custTab.className = 'px-2.5 py-1 rounded-lg text-slate-400 hover:text-white';
+        sameTab.className = 'px-2.5 py-1.5 rounded-lg bg-indigo-600 text-white font-semibold active:scale-95 transition';
+        custTab.className = 'px-2.5 py-1.5 rounded-lg text-slate-400 active:scale-95 transition';
         sameWrap.classList.remove('hidden');
         custWrap.classList.add('hidden');
       } else {
-        custTab.className = 'px-2.5 py-1 rounded-lg bg-indigo-600 text-white font-semibold';
-        sameTab.className = 'px-2.5 py-1 rounded-lg text-slate-400 hover:text-white';
+        custTab.className = 'px-2.5 py-1.5 rounded-lg bg-indigo-600 text-white font-semibold active:scale-95 transition';
+        sameTab.className = 'px-2.5 py-1.5 rounded-lg text-slate-400 active:scale-95 transition';
         custWrap.classList.remove('hidden');
         sameWrap.classList.add('hidden');
         renderCustomRows();
@@ -2160,14 +2731,15 @@
 
     function renderCustomRows() {
       const box = document.getElementById('individualDiceRows');
+      if (!box) return;
       box.innerHTML = '';
       for (let i = 0; i < appState.diceQty; i++) {
         const sides = appState.customList[i] || appState.commonFaces || 20;
         const row = document.createElement('div');
-        row.className = 'flex items-center justify-between p-2 rounded-xl bg-slate-800/80 text-xs';
+        row.className = 'flex items-center justify-between p-1.5 sm:p-2 rounded-xl bg-slate-800/80 text-xs';
         row.innerHTML = `
           <span class="font-bold text-slate-300">Dado ${i + 1}</span>
-          <select onchange="appState.customList[${i}] = parseInt(this.value, 10)" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-white">
+          <select onchange="appState.customList[${i}] = parseInt(this.value, 10)" class="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-white">
             <option value="4" ${sides === 4 ? 'selected' : ''}>D4</option>
             <option value="6" ${sides === 6 ? 'selected' : ''}>D6</option>
             <option value="8" ${sides === 8 ? 'selected' : ''}>D8</option>
@@ -2193,7 +2765,11 @@
         setCommonFaces(20);
         setDiceSkin('bronze');
         setTablePreset('tavern');
+        setTargetRounds(3);
         initThemeMusicPlayer();
+        initShakeDetection();
+        initAndroidBackNavigation();
+        renderRollHistory();
 
         const handleFirstGesture = () => {
           getAudioContext();
