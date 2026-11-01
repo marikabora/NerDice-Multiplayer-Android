@@ -1,1 +1,32 @@
-.github/workflows/build-windows.yml
+name: Compila EXE per Windows
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Scarica Codice dal Repository
+        uses: actions/checkout@v4
+
+      - name: Configura Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Installa Dipendenze
+        run: npm install
+
+      - name: Compila NerDice .EXE (Installer e Portable)
+        run: npm run dist
+
+      - name: Pubblica il file EXE come Artifact Scaricabile
+        uses: actions/upload-artifact@v4
+        with:
+          name: NerDice-Windows-EXE
+          path: dist/*.exe
+          retention-days: 30
