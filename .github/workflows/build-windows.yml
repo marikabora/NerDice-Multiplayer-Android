@@ -63,7 +63,7 @@ jobs:
             cp -r "$DIR_PATH"/* ./ 2>/dev/null || true
           fi
 
-          # 3. Crea package.json con publish disattivato
+          # 3. Crea package.json
           cat << 'EOF' > package.json
           {
             "name": "nerdice",
@@ -71,9 +71,6 @@ jobs:
             "description": "NerDice - Lancia dadi Nerd 3D",
             "author": "NerDice Team",
             "main": "main.js",
-            "scripts": {
-              "dist": "electron-builder --win --x64"
-            },
             "devDependencies": {
               "electron": "^28.2.0",
               "electron-builder": "^24.13.3"
@@ -81,7 +78,6 @@ jobs:
             "build": {
               "appId": "com.nerdice.app",
               "productName": "NerDice",
-              "publish": null,
               "directories": {
                 "output": "dist"
               },
@@ -112,7 +108,7 @@ jobs:
       - name: Compila NerDice .EXE
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npx electron-builder --win --x64 -c.publish=null
+        run: npx electron-builder --win --x64 -p never
 
       - name: Pubblica il file EXE come Artifact
         uses: actions/upload-artifact@v4
