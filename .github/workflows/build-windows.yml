@@ -1,44 +1,80 @@
 name: Compila EXE per Windows
 
 on:
-push:
-branches: [ main, master ]
-workflow_dispatch:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
 
 jobs:
-build-windows:
-runs-on: windows-latest
+  build-windows:
+    runs-on: windows-latest
 
-steps:
-  - name: Scarica Codice dal Repository
-    uses: actions/checkout@v4
+    steps:
+      - name: Scarica Codice dal Repository
+        uses: actions/checkout@v4
 
-  - name: Configura Node.js
-    uses: actions/setup-node@v4
-    with:
-      node-version: 20
+      - name: Configura Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
 
-  - name: Trova o Genera package.json
-    shell: bash
-    run: |
-      if [ ! -f "package.json" ]; then
-        if [ -f "www/package.json" ]; then
-          echo "Trovato package.json in www/, lo copio nella radice..."
-          cp www/package.json .
-        else
-          echo "Creazione automatica package.json nella radice..."
+      - name: Prepara package.json e main.js
+        shell: bash
+        run: |
+          # 1. Trova index.html
+          INDEX_PATH=$(find . -name "index.html" | head -n 1)
+          if [ -z "$INDEX_PATH" ]; then
+            echo "ERRORE: index.html non trovato!"
+            exit 1
+          fi
+          echo "Trovato index.html in: $INDEX_PATH"
+
+          # 2. Crea main.js per Electron se assente
+          cat << 'EOF' > main.js
+          const { app, BrowserWindow } = require('electron');
+          const path = require('path');
+
+          function createWindow() {
+            const win = new BrowserWindow({
+              width: 1200,
+              height: 800,
+              minWidth: 400,
+              minHeight: 600,
+              title: "NerDice - Lancia dadi Nerd",
+              autoHideMenuBar: true,
+              webPreferences: {
+                nodeIntegration: false,
+                contextIsolation: true
+              }
+            });
+            win.loadFile('index.html');
+          }
+
+          app.whenReady().then(createWindow);
+          app.on('window-all-closed', () => {
+            if (process.platform !== 'darwin') app.quit();
+          });
+          EOF
+
+          # Se index.html si trova in una sottocartella (es. www/), copialo nella radice
+          if [ "$INDEX_PATH" != "./index.html" ]; then
+            cp "$INDEX_PATH" ./index.html
+            DIR_PATH=$(dirname "$INDEX_PATH")
+            cp -r "$DIR_PATH"/* ./ 2>/dev/null || true
+          fi
+
+          # 3. Crea package.json completo se assente
           cat << 'EOF' > package.json
           {
             "name": "nerdice",
             "version": "1.0.0",
-            "description": "NerDice - Lancia dadi Nerd",
+            "description": "NerDice - Lancia dadi Nerd 3D",
             "main": "main.js",
             "scripts": {
-              "start": "electron .",
-              "dist": "electron-builder --win"
+              "dist": "electron-builder --win --x64"
             },
             "devDependencies": {
-              "electron": "^30.0.0",
+              "electron": "^28.2.0",
               "electron-builder": "^24.13.3"
             },
             "build": {
@@ -47,80 +83,36 @@ steps:
               "directories": {
                 "output": "dist"
               },
+              "files": [
+                "**/*",
+                "!dist/**/*",
+                "!.github/**/*"
+              ],
               "win": {
-                "target": ["nsis", "portable"]
+                "target": [
+                  "nsis",
+                  "portable"
+                ]
               },
               "nsis": {
                 "oneClick": false,
                 "allowToChangeInstallationDirectory": true,
                 "createDesktopShortcut": true,
-                "createStartMenuShortcut": true,
-                "shortcutName": "NerDice"
+                "createStartMenuShortcut": true
               }
             }
           }
           EOF
-        fi
-      fi
 
-  - name: Verifica presenza main.js
-    shell: bash
-    run: |
-      if [ ! -f "main.js" ]; then
-        if [ -f "www/main.js" ]; then
-          cp www/main.js .
-        else
-          echo "Creazione automatica main.js nella radice..."
-          cat << 'EOF' > main.js
-          const { app, BrowserWindow } = require('electron');
-          const path = require('path');
-          const fs = require('fs');
+      - name: Installa Dipendenze
+        run: npm install
 
-          function createWindow() {
-            const win = new BrowserWindow({
-              width: 1180,
-              height: 860,
-              minWidth: 850,
-              minHeight: 620,
-              title: 'NerDice - Lancia dadi Nerd',
-              backgroundColor: '#07090f',
-              autoHideMenuBar: true,
-              webPreferences: {
-                nodeIntegration: false,
-                contextIsolation: true
-              }
-            });
+      - name: Compila NerDice .EXE
+        run: npm run dist
 
-            if (fs.existsSync(path.join(__dirname, 'NerDice.ico'))) {
-              win.setIcon(path.join(__dirname, 'NerDice.ico'));
-            }
-
-            const wwwPath = path.join(__dirname, 'www', 'index.html');
-            const rootPath = path.join(__dirname, 'index.html');
-            if (fs.existsSync(wwwPath)) {
-              win.loadFile(wwwPath);
-            } else {
-              win.loadFile(rootPath);
-            }
-          }
-
-          app.whenReady().then(createWindow);
-          app.on('window-all-closed', () => {
-            if (process.platform !== 'darwin') app.quit();
-          });
-          EOF
-        fi
-      fi
-
-  - name: Installa Dipendenze
-    run: npm install
-
-  - name: Compila NerDice .EXE (Installer e Portable)
-    run: npm run dist
-
-  - name: Pubblica il file EXE come Artifact Scaricabile
-    uses: actions/upload-artifact@v4
-    with:
-      name: NerDice-Windows-EXE
-      path: dist/*.exe
-      retention-days: 30
+      - name: Pubblica il file EXE come Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: NerDice-Windows-EXE
+          path: dist/*.exe
+          retention-days: 30
