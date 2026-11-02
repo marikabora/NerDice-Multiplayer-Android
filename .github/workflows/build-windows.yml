@@ -21,7 +21,7 @@ jobs:
       - name: Prepara package.json e main.js
         shell: bash
         run: |
-          # 1. Trova index.html
+          # 1. Individua index.html
           INDEX_PATH=$(find . -name "index.html" | head -n 1)
           if [ -z "$INDEX_PATH" ]; then
             echo "ERRORE: index.html non trovato!"
@@ -29,7 +29,7 @@ jobs:
           fi
           echo "Trovato index.html in: $INDEX_PATH"
 
-          # 2. Crea main.js per Electron se assente
+          # 2. Crea main.js per Electron
           cat << 'EOF' > main.js
           const { app, BrowserWindow } = require('electron');
           const path = require('path');
@@ -56,22 +56,23 @@ jobs:
           });
           EOF
 
-          # Se index.html si trova in una sottocartella (es. www/), copialo nella radice
+          # Se index.html si trova in una sottocartella, sposta i file correlati nella radice
           if [ "$INDEX_PATH" != "./index.html" ]; then
             cp "$INDEX_PATH" ./index.html
             DIR_PATH=$(dirname "$INDEX_PATH")
             cp -r "$DIR_PATH"/* ./ 2>/dev/null || true
           fi
 
-          # 3. Crea package.json completo se assente
+          # 3. Crea package.json con flag esplicito publish: never
           cat << 'EOF' > package.json
           {
             "name": "nerdice",
             "version": "1.0.0",
             "description": "NerDice - Lancia dadi Nerd 3D",
+            "author": "NerDice Team",
             "main": "main.js",
             "scripts": {
-              "dist": "electron-builder --win --x64"
+              "dist": "electron-builder --win --x64 -c.publish=never"
             },
             "devDependencies": {
               "electron": "^28.2.0",
@@ -80,6 +81,7 @@ jobs:
             "build": {
               "appId": "com.nerdice.app",
               "productName": "NerDice",
+              "publish": null,
               "directories": {
                 "output": "dist"
               },
@@ -108,7 +110,7 @@ jobs:
         run: npm install
 
       - name: Compila NerDice .EXE
-        run: npm run dist
+        run: npx electron-builder --win --x64 -c.publish=never
 
       - name: Pubblica il file EXE come Artifact
         uses: actions/upload-artifact@v4
