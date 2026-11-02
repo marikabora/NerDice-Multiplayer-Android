@@ -56,14 +56,14 @@ jobs:
           });
           EOF
 
-          # Se index.html si trova in una sottocartella, sposta i file correlati nella radice
+          # Se index.html si trova in una cartella secondaria, copia i file nella radice
           if [ "$INDEX_PATH" != "./index.html" ]; then
             cp "$INDEX_PATH" ./index.html
             DIR_PATH=$(dirname "$INDEX_PATH")
             cp -r "$DIR_PATH"/* ./ 2>/dev/null || true
           fi
 
-          # 3. Crea package.json con flag esplicito publish: never
+          # 3. Crea package.json con publish disattivato
           cat << 'EOF' > package.json
           {
             "name": "nerdice",
@@ -72,7 +72,7 @@ jobs:
             "author": "NerDice Team",
             "main": "main.js",
             "scripts": {
-              "dist": "electron-builder --win --x64 -c.publish=never"
+              "dist": "electron-builder --win --x64"
             },
             "devDependencies": {
               "electron": "^28.2.0",
@@ -110,7 +110,9 @@ jobs:
         run: npm install
 
       - name: Compila NerDice .EXE
-        run: npx electron-builder --win --x64 -c.publish=never
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npx electron-builder --win --x64 -c.publish=null
 
       - name: Pubblica il file EXE come Artifact
         uses: actions/upload-artifact@v4
